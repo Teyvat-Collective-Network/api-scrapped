@@ -12,6 +12,7 @@ import auth from "./routes/auth.js";
 import TimedStore from "./lib/timed-store.js";
 import utils from "./routes/utils.js";
 import users from "./routes/users.js";
+import roles from "./routes/roles.js";
 
 const server = fastify({ ajv: { customOptions: { removeAdditional: true, coerceTypes: false } } });
 
@@ -33,6 +34,10 @@ server.decorateRequest("auth", async function () {
 server.decorateRequest("access", async function (f) {
     const user = await this.auth();
     return user && (await f(user));
+});
+
+server.decorateRequest("observer", async function () {
+    return await this.access((u) => u.roles.includes("observer"));
 });
 
 server.addHook("preSerialization", async function removeMongoFields(request, reply, payload) {
@@ -65,5 +70,6 @@ server.register(session, {
 server.register(utils, { prefix: "/v1" });
 server.register(auth, { prefix: "/v1/auth" });
 server.register(users, { prefix: "/v1/users" });
+server.register(roles, { prefix: "/v1/roles" });
 
 server.listen({ port: process.env.PORT }).then(() => console.log("API Ready."));

@@ -101,12 +101,12 @@ export default function (server, _, done) {
         const user = await request.auth();
         if (!user) return reply.code(401).send();
         await server.db.invalidations.updateOne({ id: user.id }, { $set: { invalidated: new Date() } }, { upsert: true });
-        return reply.code(204).send();
+        return reply.code(202).send();
     });
 
     server.post("/logout", async (_, reply) => {
         reply.clearCookie("token", { sameSite: "lax", domain: process.env.COOKIE_DOMAIN });
-        return reply.code(204).send();
+        return reply.code(202).send();
     });
 
     done();
