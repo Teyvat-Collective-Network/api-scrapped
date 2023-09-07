@@ -32,18 +32,18 @@ export default function (server, _, done) {
                 code: request.query.code,
                 redirect_uri: `${process.env.DEFAULT_REDIRECT}/v1/auth`,
             })
-            .catch(console.error);
+            .catch((error) => server.logger.error(error));
 
         if (!tokens) throw HTTPErrors[401]("Invalid Code");
 
-        const user = await oauth.user(tokens).catch(console.error);
+        const user = await oauth.user(tokens).catch((error) => server.logger.error(error));
         if (!user) throw HTTPErrors[401]("Invalid Token Received");
 
         const now = Date.now();
         const expires = now + 30 * 24 * 60 * 60 * 1000;
 
-        const jwt = server.jwt.sign({ id: user.id, created: now, expires });
-        reply.setCookie("token", jwt, { sameSite: "lax", domain: process.env.COOKIE_DOMAIN, expires });
+        const token = server.jwt.sign({ id: user.id, created: now, expires });
+        reply.setCookie("token", token, { sameSite: "lax", domain: process.env.COOKIE_DOMAIN, expires });
         return reply.redirect(redirect || process.env.DEFAULT_REDIRECT);
     });
 
@@ -74,15 +74,15 @@ export default function (server, _, done) {
 
         let expires;
 
-        if (request.query.maxage) {
-            const maxage = parseInt(request.query.maxage);
+        if (request.body.maxage) {
+            const maxage = parseInt(request.body.maxage);
             if (isNaN(maxage) || maxage <= 0) return reply.code(400).send("maxage should be a positive integer");
 
             expires = now + maxage;
         }
 
-        if (request.query.expires) {
-            const expiry = parseInt(request.query.expires);
+        if (request.body.expires) {
+            const expiry = parseInt(request.body.expires);
             if (isNaN(expiry) || expiry <= now) return reply.code(400).send("expiry should be an integer representing a timestamp in the future");
 
             if (expires) expires = Math.min(expires, parseInt(expiry));
@@ -91,7 +91,7 @@ export default function (server, _, done) {
 
         if (expires) data.expires = expires;
 
-        if (request.query.scopes) data.scopes = request.query.scopes.split(",").map((x) => x.trim());
+        if (request.body.scopes) data.scopes = request.body.scopes.map((x) => x.trim());
         else data.scopes = ["all"];
 
         return server.jwt.sign(data);
@@ -100,7 +100,9 @@ export default function (server, _, done) {
     server.post("/invalidate", async (request, reply) => {
         const user = await request.auth();
         if (!user) return reply.code(401).send();
-        await server.db.invalidations.updateOne({ id: user.id }, { $set: { invalidated: new Date() } }, { upsert: true });
+
+        const now = new Date();
+        await server.query("INSERT INTO invalidations VALUES (?, ?) ON DUPLICATE KEY UPDATE invalidated = ?", [user.id, now, now]);
         return reply.code(202).send();
     });
 

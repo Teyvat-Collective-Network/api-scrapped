@@ -1,110 +1,107 @@
-import scopecheck from "../lib/scopecheck.js";
-import { snowflake } from "../utils.js";
+import { get_user, snowflake } from "../utils.js";
 
 export default function (server, _, done) {
-    server.get("/", async (request, reply) => {
-        let users = (await server.db.users.find()).map((x) => x.toObject());
+    server.get("/", async (_, reply) => {
+        const users = new Map();
 
-        if (request.query.guilds) {
-            const guilds = request.query.guilds.split(",");
-            const key = request.query.allguilds === "true" ? "every" : "some";
-            users = users.filter((user) => guilds[key].bind(guilds)((guild) => user.guilds[guild]));
+        for (const { id } of await server.query(`SELECT id FROM users`)) users.set(id, { guilds: {}, roles: [] });
+
+        for (const { user, guild, role } of await server.query(`SELECT * FROM guild_roles`)) {
+            const guilds = users.get(user).guilds;
+            guilds[guild] ??= [];
+            guilds[guild].push(role);
         }
 
-        if (request.query.roles) {
-            const roles = request.query.roles.split(",");
-            const key = request.query.anyroles === "true" ? "some" : "every";
-            users = users.filter((user) => roles[key].bind(roles)((role) => user.roles.includes(role)));
+        for (const { user, role } of await server.query(`SELECT * FROM global_roles`)) {
+            users.get(user).roles.push(role);
         }
 
-        return reply.send(users);
+        for (const { id, owner, advisor } of await server.query(`SELECT id, owner, advisor FROM guilds`)) {
+            const x = users.get(owner);
+            x.roles.push("owner");
+            x.guilds[id] ??= [];
+            x.guilds[id].push("owner");
+
+            if (advisor) {
+                const y = users.get(advisor);
+                y.roles.push("advisor");
+                y.guilds[id] ??= [];
+                y.guilds[id].push("advisor");
+            }
+        }
+
+        return reply.send([...users.entries()].map((id, user) => ({ id, ...user })));
     });
 
     server.post("/", { schema: schemas.post }, async (request, reply) => {
-        if (!(await request.auth())) return reply.code(401).send();
-        const { id } = request.body;
-        const item = await server.db.findOneAndUpdate({ id }, { $set: { id } }, { upsert: true });
-        if (item) return reply.code(409).send();
-        return reply.code(201).send();
+        if (!(await request.auth())) return reply.code(403).send();
+
+        try {
+            await server.query(`INSERT INTO users VALUES (?)`, [request.body.id]);
+            return reply.code(201).send();
+        } catch {
+            return reply.code(409).send();
+        }
     });
 
     server.get("/:userid", { schema: schemas.get }, async (request, reply) => {
-        const id = request.params.userid;
-
-        const doc = (await server.db.users.findOne({ id }))?.toObject();
-
-        if (doc) {
-            for (const key of ["owner", "advisor"])
-                for (const item of await server.db.guilds.find({ [key]: id })) {
-                    doc.guilds[item.id] ??= [];
-                    doc.guilds[item.id].push(key);
-
-                    if ((key === "owner") ^ doc.delegated) doc.guilds[item.id].push("voter");
-                }
-
-            return reply.send(doc);
-        }
-
-        return reply.code(404).send();
+        return await reply.send(await get_user(request.params.userid));
     });
 
     server.delete("/:userid", { schema: schemas.get }, async (request, reply) => {
-        if (!(await request.observer())) return reply.code(403).send();
+        if (!(await request.admin())) return reply.code(403).send();
 
-        const user = (await server.db.users.findOne({ id: request.params.userid }))?.toObject();
-        if (!user) return reply.code(404).send();
-        if (await server.db.guilds.exists({ owner: user.id })) return reply.code(406).send();
+        const id = request.params.userid;
 
-        await server.db.users.deleteOne({ id: request.params.userid });
-        return reply.send(user);
+        if ((await server.query(`SELECT 1 FROM users WHERE id = ?`, [id])).length === 0) return reply.code(404).send();
+        if ((await server.query(`SELECT 1 FROM guilds WHERE owner = ?`, [id])).length > 0) return reply.code(406).send();
+
+        await server.query(`DELETE FROM users WHERE id = ?`, [id]);
     });
 
-    server.put("/:userid/roles", { schema: schemas.rolemod }, (request, reply) => handle(server, request, reply, true));
-
-    server.delete("/:userid/roles", { schema: schemas.rolemod }, (request, reply) => handle(server, request, reply, false));
+    server.put("/:userid/roles", { schema: schemas.roles }, (request, reply) => handle(server, request, reply, true));
+    server.delete("/:userid/roles", { schema: schemas.roles }, (request, reply) => handle(server, request, reply, false));
 
     done();
 }
 
 async function handle(server, request, reply, add) {
     const user = await request.auth();
-    if (!scopecheck("users/write", user.scopes)) return reply.code(403).send();
+    if (!user) return reply.code(403).send();
 
-    const data = request.body;
-    const observer = user.roles.includes("observer");
+    const admin = user.roles.includes(process.env.ADMIN_ROLE);
 
-    if (!data.guild) {
-        if (!observer) return reply.code(403).send();
+    const { guild, roles } = request.body;
+
+    if (guild) {
+        const [item] = await server.query(`SELECT owner FROM guilds WHERE id = ?`, [guild]);
+        if (!item) return reply.code(400).send();
+        if (!admin && item.owner !== user.id) return reply.code(403).send();
     } else {
-        const doc = (await server.db.guilds.findOne({ id: data.guild }))?.toObject();
-        if (!doc) return reply.code(400).send(`no such guild ${data.guild}`);
-        if (!observer && doc.owner !== user.id && (data.roles.includes("manager") || !user.guilds[data.guild]?.roles?.includes("manager")))
-            return reply.code(403).send();
+        if (!admin) return reply.code(403).send();
     }
 
-    const key = data.guild ? "guild" : "global";
+    const key = guild ? "guild" : "global";
 
-    for (const role of data.roles) {
-        const doc = (await server.db.roles.findOne({ id: role }))?.toObject();
-        if (!doc || (doc.assignment !== "all" && doc.assignment !== key)) return reply.code(400).send(`${role} is not a ${key} role`);
-    }
+    for (const role of roles)
+        if ((await server.query(`SELECT 1 FROM roles WHERE id = ? AND assignment IN ("${key}", "all")`, [role])).length === 0) return reply.code(400).send();
 
-    const item = await server.db.users.findOneAndUpdate(
-        { id: request.params.userid },
-        {
-            [add ? "$addToSet" : "$pull"]: { [data.guild ? `guilds.${data.guild}` : "roles"]: { [add ? "$each" : "$in"]: data.roles } },
-            $setOnInsert: data.guild ? { roles: [] } : { guilds: {} },
-        },
-        { upsert: true, new: true },
-    );
-
-    return reply.send(item.toObject());
+    if (add)
+        await server.query(`INSERT INTO ${key}_roles VALUES ? ON DUPLICATE KEY UPDATE user = user`, [
+            roles.map((role) => [request.params.userid, ...(guild ? [guild] : []), role]),
+        ]);
+    else
+        await server.query(`DELETE FROM ${key}_roles WHERE user = ? ${guild ? `AND guild = ?` : ``} AND role IN ?`, [
+            request.params.userid,
+            ...(guild ? [guild] : []),
+            roles,
+        ]);
 }
 
 const schemas = {
     post: { body: { type: "object", properties: { id: snowflake }, required: ["id"], additionalProperties: false } },
     get: { params: { type: "object", properties: { userid: snowflake } } },
-    rolemod: {
+    roles: {
         body: {
             type: "object",
             properties: { guild: snowflake, roles: { type: "array", items: { type: "string" } } },
