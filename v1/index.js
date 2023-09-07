@@ -13,11 +13,41 @@ import TimedStore from "./lib/timed-store.js";
 import logger from "../logger.js";
 import query from "./db/query.js";
 
-const server = fastify({ ajv: { customOptions: { removeAdditional: true, coerceTypes: false } } });
+import "./db/setup.js";
+import { get_user } from "./utils.js";
+import auth from "./routes/auth.js";
+import routes from "./routes.js";
+import scopecheck from "./lib/scopecheck.js";
+
+const server = fastify({ ignoreTrailingSlash: true, ajv: { customOptions: { removeAdditional: true, coerceTypes: false } } });
 
 server.decorate("query", query);
 server.decorate("logger", logger);
 server.decorate("jwt", new JWT(process.env.JWT_SECRET));
+
+server.decorate("api", function (route, handler) {
+    const data = routes[route];
+    if (!data) throw new Error(`Missing route declaration for ${route}.`);
+
+    const [method, path] = route.split(" ");
+    server[method.toLowerCase()](`/v1${path}`, { schema: data.schema ?? {} }, async (request, reply) => {
+        if (await scopecheck(request, data.scope))
+            try {
+                if (data.auth) if (!(request.user = await request.auth())) throw 401;
+                return await handler(request, reply);
+            } catch (error) {
+                if (typeof error === "number") return reply.code(error).send();
+
+                if (Array.isArray(error) && error.length === 2) {
+                    const [code, message] = error;
+                    if (typeof code === "number" && typeof message === "string") return reply.code(code).send(message);
+                }
+
+                throw error;
+            }
+        else return reply.code(401).send();
+    });
+});
 
 server.decorateRequest("auth", async function () {
     const payload = server.jwt.verify(this.headers.authorization || this.cookies.token);
@@ -40,10 +70,6 @@ server.decorateRequest("admin", async function () {
     return await this.access((u) => u.roles.includes(process.env.ADMIN_ROLE));
 });
 
-server.get("/", async (_, reply) => {
-    return reply.send("online");
-});
-
 server.register(cookie);
 server.register(cors);
 server.register(formbody);
@@ -54,14 +80,6 @@ server.register(session, {
     saveUninitialized: false,
 });
 
+server.register(auth);
+
 server.listen({ port: process.env.PORT }).then(() => logger.info("[API] READY"));
-
-server.register(auth, { prefix: "/v1/auth" });
-server.register(utils, { prefix: "/v1" });
-server.register(users, { prefix: "/v1/users" });
-
-import "./db/setup.js";
-import auth from "./routes/auth.js";
-import utils from "./routes/utils.js";
-import users from "./routes/users.js";
-import { get_user } from "./utils.js";
