@@ -14,10 +14,10 @@ import logger from "../logger.js";
 import query from "./db/query.js";
 
 import "./db/setup.js";
-import { get_user } from "./utils.js";
-import auth from "./routes/auth.js";
-import routes from "./routes.js";
 import scopecheck from "./lib/scopecheck.js";
+import routes from "./routes.js";
+import auth from "./routes/auth.js";
+import { get_user } from "./utils.js";
 
 const server = fastify({ ignoreTrailingSlash: true, ajv: { customOptions: { removeAdditional: true, coerceTypes: false } } });
 
