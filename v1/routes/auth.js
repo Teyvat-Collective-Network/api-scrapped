@@ -12,7 +12,7 @@ export default function (server, _, done) {
                 response_type: "code",
                 client_id: process.env.DISCORD_ID,
                 scope: "identify",
-                redirect_uri: `${process.env.DEFAULT_REDIRECT}/v1/auth/callback`,
+                redirect_uri: process.env.AUTH_REDIRECT,
                 state,
             })}`,
         );
@@ -28,7 +28,7 @@ export default function (server, _, done) {
             client_id: process.env.DISCORD_ID,
             client_secret: process.env.DISCORD_SECRET,
             code: request.query.code,
-            redirect_uri: `${process.env.DEFAULT_REDIRECT}/v1/auth/callback`,
+            redirect_uri: process.env.AUTH_REDIRECT,
         });
 
         if (!tokens) throw [401, "Invalid code."];
