@@ -5,6 +5,7 @@ export default {
     "GET /auth/callback": { schema: { querystring: { type: "object", properties: { code: string, state: string }, required: ["code", "state"] } } },
     "GET /auth/key-info": { auth: true },
     "GET /auth/token": { auth: true },
+    "GET /auth/me": { auth: true },
     "POST /auth/logout": { auth: true },
     "POST /auth/invalidate": { auth: true },
     "POST /auth/key": {

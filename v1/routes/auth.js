@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import oauth from "../lib/oauth.js";
+import { get_user } from "../utils.js";
 
 export default function (server, _, done) {
     server.api("GET /auth/login", async (request, reply) => {
@@ -57,6 +58,10 @@ export default function (server, _, done) {
 
     server.api("GET /auth/token", async (request) => {
         return request.headers.authorization || request.cookies.token;
+    });
+
+    server.api("GET /auth/me", async (request) => {
+        return await get_user(request.user.id);
     });
 
     server.api("POST /auth/logout", async (_, reply) => {
