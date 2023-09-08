@@ -9,4 +9,5 @@ export default {
         auth: true,
         schema: { body: { type: "object", properties: { maxage: { type: "integer", minimum: 1 }, scopes: { type: "array", items: string } } } },
     },
+    "GET /stats": {},
 };

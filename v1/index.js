@@ -18,6 +18,7 @@ import scopecheck from "./lib/scopecheck.js";
 import routes from "./routes.js";
 import auth from "./routes/auth.js";
 import { get_user } from "./utils.js";
+import root from "./routes/root.js";
 
 const server = fastify({ ignoreTrailingSlash: true, ajv: { customOptions: { removeAdditional: true, coerceTypes: false } } });
 
@@ -81,5 +82,6 @@ server.register(session, {
 });
 
 server.register(auth);
+server.register(root);
 
 server.listen({ port: process.env.PORT }).then(() => logger.info("[API] READY"));
