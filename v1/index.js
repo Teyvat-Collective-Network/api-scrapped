@@ -50,7 +50,7 @@ server.decorate("api", function (route, handler) {
 });
 
 server.decorateRequest("auth", async function () {
-    const payload = server.jwt.verify(this.headers.authorization || this.cookies.token);
+    const payload = server.jwt.verify(this.headers.authorization);
 
     if (!payload || !payload.created || payload.expires < Date.now()) return;
 

@@ -6,7 +6,7 @@ export default function (server, _, done) {
     server.api("GET /auth/login", async (request, reply) => {
         const state = crypto.randomBytes(32).toString("hex");
         request.session.state = state;
-        request.session.redirect = request.query.redirect || process.env.DEFAULT_REDIRECT;
+        request.session.redirect = request.query.redirect || "/";
 
         return reply.redirect(
             `https://discord.com/oauth2/authorize?${new URLSearchParams({
@@ -41,8 +41,7 @@ export default function (server, _, done) {
         const expires = now + 30 * 24 * 60 * 60 * 1000;
 
         const token = server.jwt.sign({ id: user.id, created: now, expires });
-        reply.setCookie("token", token, { sameSite: "lax", domain: process.env.COOKIE_DOMAIN, expires });
-        return reply.redirect(redirect || process.env.DEFAULT_REDIRECT);
+        return reply.redirect(`${process.env.HOME_DOMAIN}?${new URLSearchParams({ token, redirect })}`);
     });
 
     server.api("GET /auth/key-info", async (request) => {
@@ -57,15 +56,11 @@ export default function (server, _, done) {
     });
 
     server.api("GET /auth/token", async (request) => {
-        return request.headers.authorization || request.cookies.token;
+        return request.headers.authorization;
     });
 
     server.api("GET /auth/me", async (request) => {
         return await get_user(request.user.id);
-    });
-
-    server.api("POST /auth/logout", async (_, reply) => {
-        reply.clearCookie("token", { sameSite: "lax", domain: process.env.COOKIE_DOMAIN });
     });
 
     server.api("POST /auth/invalidate", async (request) => {
