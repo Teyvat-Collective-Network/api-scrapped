@@ -1,18 +1,23 @@
 {
-    "type": "module",
-    "main": "index.js",
-    "scripts": {
-        "debug": "DEBUG=true node . | pino-pretty -i pid,hostname,time",
-        "start": "node . | pino-pretty -i pid,hostname -t 'yyyy-mm-dd HH:MM:ss'"
-    },
-    "dependencies": {
-        "@fastify/cookie": "^8.0.0",
-        "@fastify/cors": "^8.1.0",
-        "@fastify/formbody": "^7.4.0",
-        "@fastify/session": "^10.4.0",
-        "dotenv": "^16.0.1",
-        "fastify": "^4.4.0",
-        "mysql": "^2.18.1",
-        "pino": "^8.15.0"
-    }
+  "name": "api",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "DEBUG=true bun run --watch index.ts | pino-pretty -i pid,hostname,time",
+    "test": "TEST=true DEBUG=true bun run --watch index.ts | pino-pretty -i pid,hostname,time",
+    "start": "bun run index.ts | pino-pretty -i pid,hostname -t 'yyyy-mm-dd HH:MM:ss'"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/mysql": "^2.15.21",
+    "ajv": "^8.12.0",
+    "async-mutex": "^0.4.0",
+    "mysql": "^2.18.1",
+    "pino": "^8.15.1"
+  }
 }

@@ -1,7 +1,7 @@
-import logger from "../../logger.js";
+import logger from "../logger.js";
 import query from "./query.js";
 
-async function setup(table, string) {
+async function setup(table: string, string: string) {
     await query(`CREATE TABLE ${table} (${string})`)
         .then(() => logger.debug(`[DB] Created table '${table}'`))
         .catch((error) =>
@@ -13,14 +13,15 @@ await setup(
     "invalidations",
     `
         id VARCHAR(20) NOT NULL PRIMARY KEY,
-        invalidated DATETIME NOT NULL
+        invalidated BIGINT NOT NULL
     `,
 );
 
 await setup(
     "users",
     `
-        id VARCHAR(20) NOT NULL PRIMARY KEY
+        id VARCHAR(20) NOT NULL PRIMARY KEY,
+        observer BOOLEAN NOT NULL DEFAULT false
     `,
 );
 
@@ -47,14 +48,14 @@ await setup(
     `
         id VARCHAR(20) NOT NULL PRIMARY KEY,
         name VARCHAR(32) NOT NULL,
-        \`character\` VARCHAR(32) NOT NULL,
+        mascot VARCHAR(32) NOT NULL,
         invite VARCHAR(32) NOT NULL,
         owner VARCHAR(20) NOT NULL,
         advisor VARCHAR(20),
         delegated BOOLEAN NOT NULL DEFAULT false,
-        lastToggle DATETIME,
+        lastToggle BIGINT,
         allowance BIGINT NOT NULL DEFAULT 5184000000,
-        FOREIGN KEY (\`character\`) REFERENCES characters(id),
+        FOREIGN KEY (mascot) REFERENCES characters(id),
         FOREIGN KEY (owner) REFERENCES users(id),
         FOREIGN KEY (advisor) REFERENCES users(id)
     `,
@@ -84,11 +85,39 @@ await setup(
     `,
 );
 
-await query(`INSERT INTO users VALUES (?) ON DUPLICATE KEY UPDATE id = id`, [process.env.ADMIN]);
-await query(`INSERT INTO roles VALUES (?, ?, "global"), ("staff", "Staff of a TCN guild", "all") ON DUPLICATE KEY UPDATE id = id`, [
-    process.env.ADMIN_ROLE,
-    process.env.ADMIN_ROLE_DESCRIPTION,
-]);
-await query(`INSERT INTO global_roles VALUES (?, ?) ON DUPLICATE KEY UPDATE user = user`, [process.env.ADMIN, process.env.ADMIN_ROLE]);
+await setup(
+    "guild_staff",
+    `
+        user VARCHAR(20) NOT NULL,
+        guild VARCHAR(20) NOT NULL,
+        PRIMARY KEY (user, guild),
+        FOREIGN KEY (user) REFERENCES users(id),
+        FOREIGN KEY (guild) REFERENCES guilds(id)
+    `,
+);
+
+await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE id = id`, [Bun.env.ADMIN]);
 
 logger.debug("[DB] Initialized root admin");
+
+await query(
+    `INSERT INTO roles VALUES
+        ("banshares", "Permission to submit banshares",       "guild"),
+        ("developer", "Verified TCN developer",               "global"),
+        ("staff",     "Staff of a TCN guild",                 "pseudo"),
+        ("observer",  "TCN observer (administrator)",         "pseudo"),
+        ("owner",     "Server Owners of TCN guilds",          "pseudo"),
+        ("advisor",   "Council Advisors of TCN guilds",       "pseudo"),
+        ("voter",     "Designated voters on the TCN council", "pseudo"),
+        ("council",   "TCN Council Members",                  "pseudo")
+    ON DUPLICATE KEY UPDATE id = id`,
+);
+
+logger.debug("[DB] Initialized base roles");
+
+if (Bun.env.DEBUG) {
+    await query(`INSERT INTO characters VALUES ("shenhe", "Shenhe", NULL) ON DUPLICATE KEY UPDATE id = id`);
+    await query(`INSERT INTO guilds VALUES (?, "Test Guild", "shenhe", "invite", ?, NULL, DEFAULT, NULL, DEFAULT)`, [Bun.env.TEST_GUILD, Bun.env.ADMIN]);
+
+    logger.debug("[DB] Initialized debug data");
+}

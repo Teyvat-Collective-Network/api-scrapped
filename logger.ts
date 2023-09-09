@@ -1,7 +1,5 @@
 import pino from "pino";
 
 const logger = pino();
-
-if (process.env.DEBUG) logger.level = "trace";
-
+if (Bun.env.DEBUG) logger.level = "trace";
 export default logger;
