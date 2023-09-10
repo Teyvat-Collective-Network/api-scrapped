@@ -1,4 +1,4 @@
-# api
+# TCN API
 
 To run this locally, you will need to install mysql:
 
@@ -45,7 +45,7 @@ bun i
 
 ---
 
-- For production simulation, run `bun start`.
+- For production, run `bun start`.
 - For development, run `bun dev`, which enables verbose logging and automatic reloading on file change (you will need to manually restart if you add new routes since they are dynamically imported and therefore new files won't be recognized by Bun).
 - For testing, run `bun test-mode` to start up the server in test mode, which enables full logging and uses the test database.
 
