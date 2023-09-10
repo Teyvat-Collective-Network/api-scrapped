@@ -59,7 +59,7 @@ export async function getUser(id: string): Promise<User> {
             }
         }
 
-    user.council = user.observer || user.owner || user.voter;
+    if ((user.council = user.observer || user.owner || user.voter)) user.roles.push("council");
 
     return user;
 }
@@ -94,7 +94,7 @@ export async function getGuild(id: string): Promise<Guild> {
         mascot: data.mascot,
         invite: data.invite,
         owner: data.owner,
-        advisor: data.advisor || undefined,
+        advisor: data.advisor || null,
         voter: data.delegated ? data.advisor : data.owner,
         delegated: !!data.delegated,
         users,

@@ -14,7 +14,7 @@ export function randomId() {
     while (true) {
         const user = new Array(20)
             .fill(0)
-            .map(() => Math.floor(Math.random() * 10))
+            .map((_, i) => Math.floor(Math.random() * (i ? 10 : 9) + (i ? 0 : 1)))
             .join("");
 
         if (users.has(user)) continue;

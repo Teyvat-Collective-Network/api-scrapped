@@ -49,7 +49,7 @@ describe("GET /guilds/:guildId", () => {
     const route = `GET /v1/guilds/${id}`;
 
     test("404", async () => {
-        const req = await api(null, `GET /v1/guilds/${randomId()}`);
+        const req = await api(null, `!GET /v1/guilds/${randomId()}`);
         expectError(req, 404, codes.MISSING_GUILD);
     });
 
@@ -87,7 +87,7 @@ describe("POST /guilds/:guildId", async () => {
 
     test("block delegated without advisor", async () => {
         await del();
-        const req = await api(forgeAdmin(), `!${route}`, { ...guild, advisor: undefined, delegated: true });
+        const req = await api(forgeAdmin(), `!${route}`, { ...guild, advisor: null, delegated: true });
         await expectError(req, 400, codes.DELEGATED_WITHOUT_ADVISOR);
     });
 
@@ -167,6 +167,19 @@ describe("PATCH /guilds/:guildId", async () => {
 
         const res = await api(forgeAdmin(), route, { delegated: true });
         expect(res.voter).toBe(data.advisor);
+    });
+
+    test("remove advisor", async () => {
+        await setupGuild(id);
+        await query(`UPDATE guilds SET delegated = true WHERE id = ?`, [id]);
+
+        const before = await getGuild(id);
+        expect(before.advisor).toBeString();
+        expect(before.delegated).toBeTrue();
+
+        const res = await api(forgeAdmin(), route, { advisor: null });
+        expect(res.advisor).toBeNull();
+        expect(res.delegated).toBeFalse();
     });
 });
 

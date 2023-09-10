@@ -11,8 +11,11 @@ export default {
         if (!(await hasGuild(guildId))) throw [404, codes.MISSING_GUILD, `No guild exists with ID ${guildId}`];
 
         const guild = await getGuild(guildId);
-        if (body.delegated && !body.advisor && !guild.advisor)
-            throw [400, codes.DELEGATED_WITHOUT_ADVISOR, "Delegation is only possible if an advisor exists."];
+
+        if (body.advisor === null || (body.advisor === undefined && !guild.advisor)) {
+            if (body.delegated) throw [400, codes.DELEGATED_WITHOUT_ADVISOR, "Delegation is only possible if an advisor exists."];
+            body.delegated = false;
+        }
 
         if (body.mascot !== undefined && !(await hasCharacter(body.mascot)))
             throw [400, codes.MISSING_CHARACTER, `The character ${body.mascot} does not exist.`];

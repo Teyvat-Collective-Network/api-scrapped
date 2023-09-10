@@ -45,6 +45,29 @@ await setup(
 );
 
 await setup(
+    "attributes",
+    `
+        id VARCHAR(32) NOT NULL,
+        type VARCHAR(32) NOT NULL,
+        name VARCHAR(64) NOT NULL,
+        emoji VARCHAR(64),
+        PRIMARY KEY (type, id)
+    `,
+);
+
+await setup(
+    "character_attributes",
+    `
+        \`character\` VARCHAR(32) NOT NULL,
+        type VARCHAR(32) NOT NULL,
+        value VARCHAR(32) NOT NULL,
+        PRIMARY KEY (\`character\`, type),
+        FOREIGN KEY (\`character\`) REFERENCES characters(id) ON DELETE CASCADE,
+        FOREIGN KEY (type, value) REFERENCES attributes(type, id) ON DELETE CASCADE
+    `,
+);
+
+await setup(
     "guilds",
     `
         id VARCHAR(20) NOT NULL PRIMARY KEY,
