@@ -1,7 +1,7 @@
 {
     "name": "api",
     "scripts": {
-        "dev": "DEBUG=true bun run --watch index.ts | pino-pretty -i pid,hostname,time",
+        "dev": "DEBUG=true NO_TRACE=true bun run --watch index.ts | pino-pretty -i pid,hostname,time",
         "test-mode": "TEST=true DEBUG=true bun run --watch index.ts | pino-pretty -i pid,hostname,time",
         "test": "TEST_CLIENT=true bun test --bail",
         "start": "bun run index.ts | pino-pretty -i pid,hostname -t 'yyyy-mm-dd HH:MM:ss'"
