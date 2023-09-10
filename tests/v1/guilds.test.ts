@@ -4,10 +4,10 @@ import { ensureUser, getGuild, hasGuild } from "../../lib/db.ts";
 import query from "../../lib/query.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { expectError, forge, forgeAdmin, randomId, test401, testScope } from "../utils.ts";
+import { expect403, expectError, forgeAdmin, randomId, test401, testScope } from "../utils.ts";
 
 function testGuild(guild: any) {
-    expect(guild).not.toBeUndefined();
+    expect(guild).toBeDefined();
     expect(guild.name).toBeString();
     expect(guild.mascot).toBeString();
     expect(guild.invite).toBeString();
@@ -48,6 +48,11 @@ describe("GET /guilds/:guildId", () => {
     const { id } = testData.GUILD;
     const route = `GET /v1/guilds/${id}`;
 
+    test("404", async () => {
+        const req = await api(null, `GET /v1/guilds/${randomId()}`);
+        expectError(req, 404, codes.MISSING_GUILD);
+    });
+
     test("get guild", async () => {
         const res = await api(null, route);
 
@@ -68,12 +73,11 @@ describe("POST /guilds/:guildId", async () => {
 
     const del = () => query(`DELETE FROM guilds WHERE id = ?`, [id]);
 
-    test("401", test401(route));
-    test("scope", testScope(route));
+    test401(route);
+    testScope(route);
 
     test("observer only", async () => {
-        const req = await api(forge(), `!${route}`, guild);
-        await expectError(req, 403, codes.FORBIDDEN);
+        await expect403(route, guild);
     });
 
     test("block duplicate guild", async () => {
@@ -121,12 +125,11 @@ describe("PATCH /guilds/:guildId", async () => {
 
     await setupGuild(id);
 
-    test("401", test401(route));
-    test("scope", testScope(route));
+    test401(route);
+    testScope(route);
 
     test("observer only", async () => {
-        const req = await api(forge(), `!${route}`, {});
-        await expectError(req, 403, codes.FORBIDDEN);
+        await expect403(route, {});
     });
 
     test("block missing guild", async () => {
@@ -173,12 +176,11 @@ describe("DELETE /guilds/:guildId", async () => {
 
     await setupGuild(id);
 
-    test("401", test401(route));
-    test("scope", testScope(route));
+    test401(route);
+    testScope(route);
 
     test("observer only", async () => {
-        const req = await api(forge(), `!${route}`);
-        await expectError(req, 403, codes.FORBIDDEN);
+        await expect403(route);
     });
 
     test("block missing guild", async () => {

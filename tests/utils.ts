@@ -1,4 +1,4 @@
-import { expect } from "bun:test";
+import { expect, test } from "bun:test";
 import api from "./api.ts";
 import jwt from "../lib/jwt.ts";
 import codes from "../lib/codes.ts";
@@ -40,17 +40,17 @@ export function forgeOwner(data: any = {}) {
 }
 
 export function test401(route: string) {
-    return async () => {
-        const req = await api(null, "!" + route);
+    test("401", async () => {
+        const req = await api(null, route.startsWith("!") ? route : `!${route}`);
         await expectError(req, 401, codes.MISSING_AUTH);
-    };
+    });
 }
 
-export function testScope(route: string) {
-    return async () => {
-        const req = await api(forgeAdmin({ scopes: [] }), "!" + route);
+export async function testScope(route: string) {
+    test("scope", async () => {
+        const req = await api(forgeAdmin({ scopes: [] }), route.startsWith("!") ? route : `!${route}`);
         await expectError(req, 403, codes.MISSING_SCOPE);
-    };
+    });
 }
 
 export async function expectError(req: Response, status: number, code: number) {
@@ -58,4 +58,9 @@ export async function expectError(req: Response, status: number, code: number) {
 
     const res = await req.json();
     expect(res.code).toBe(code);
+}
+
+export async function expect403(route: string, data?: any) {
+    const req = await api(forge(), route.startsWith("!") ? route : `!${route}`, data);
+    await expectError(req, 403, codes.FORBIDDEN);
 }

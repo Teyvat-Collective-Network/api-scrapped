@@ -64,7 +64,7 @@ export async function getUser(id: string): Promise<User> {
     return user;
 }
 
-export async function getRole(id: string): Promise<Role | null> {
+export async function getRole(id: string): Promise<Role> {
     const [role] = await query(`SELECT * FROM roles WHERE id = ?`, [id]);
     return role;
 }
@@ -110,6 +110,10 @@ async function exists(table: string, id: string): Promise<boolean> {
 
 export async function hasGuild(id: string): Promise<boolean> {
     return await exists("guilds", id);
+}
+
+export async function hasRole(id: string): Promise<boolean> {
+    return await exists("roles", id);
 }
 
 export async function hasCharacter(id: string): Promise<boolean> {

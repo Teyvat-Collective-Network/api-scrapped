@@ -1,13 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import api from "../api.ts";
-import { forge, forgeAdmin, test401, expectError, randomId } from "../utils.ts";
 import codes from "../../lib/codes.ts";
+import api from "../api.ts";
 import testData from "../testData.ts";
+import { expectError, forge, forgeAdmin, randomId, test401 } from "../utils.ts";
 
 describe("GET /auth/key-info", () => {
     const route = `GET /v1/auth/key-info`;
 
-    test("401", test401(route));
+    test401(route);
 
     test("returns correct info", async () => {
         const id = randomId();
@@ -26,7 +26,7 @@ describe("GET /auth/key-info", () => {
 describe("GET /auth/token", () => {
     const route = `GET /v1/auth/token`;
 
-    test("401", test401(route));
+    test401(route);
 
     test("returns token", async () => {
         const token = forge(randomId());
@@ -41,7 +41,7 @@ describe("GET /auth/token", () => {
 describe("GET /auth/me", () => {
     const route = `GET /v1/auth/me`;
 
-    test("401", test401(route));
+    test401(route);
 
     test("returns correct info", async () => {
         const id = Bun.env.ADMIN!;
@@ -61,7 +61,7 @@ describe("GET /auth/me", () => {
 describe("POST /auth/invalidate", () => {
     const route = `POST /v1/auth/invalidate`;
 
-    test("401", test401(route));
+    test401(route);
 
     test("invalidates token", async () => {
         const token = forge(randomId(), { created: Date.now(), expires: Date.now() + 1000 });
@@ -81,7 +81,7 @@ describe("POST /auth/key", () => {
     const route = `POST /v1/auth/key`;
     const testRoute = `GET /v1/auth/key-info`;
 
-    test("401", test401(route));
+    test401(route);
 
     const id = randomId();
 

@@ -55,8 +55,8 @@ await setup(
         advisor VARCHAR(20),
         delegated BOOLEAN NOT NULL DEFAULT false,
         FOREIGN KEY (mascot) REFERENCES characters(id),
-        FOREIGN KEY (owner) REFERENCES users(id),
-        FOREIGN KEY (advisor) REFERENCES users(id)
+        FOREIGN KEY (owner) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (advisor) REFERENCES users(id) ON DELETE CASCADE
     `,
 );
 
@@ -67,9 +67,9 @@ await setup(
         guild VARCHAR(20) NOT NULL,
         role VARCHAR(32) NOT NULL,
         PRIMARY KEY (user, guild, role),
-        FOREIGN KEY (user) REFERENCES users(id),
-        FOREIGN KEY (guild) REFERENCES guilds(id),
-        FOREIGN KEY (role) REFERENCES roles(id)
+        FOREIGN KEY (user) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (guild) REFERENCES guilds(id) ON DELETE CASCADE,
+        FOREIGN KEY (role) REFERENCES roles(id) ON DELETE CASCADE
     `,
 );
 
@@ -79,8 +79,8 @@ await setup(
         user VARCHAR(20) NOT NULL,
         role VARCHAR(32) NOT NULL,
         PRIMARY KEY (user, role),
-        FOREIGN KEY (user) REFERENCES users(id),
-        FOREIGN KEY (role) REFERENCES roles(id)
+        FOREIGN KEY (user) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (role) REFERENCES roles(id) ON DELETE CASCADE
     `,
 );
 
@@ -90,8 +90,8 @@ await setup(
         user VARCHAR(20) NOT NULL,
         guild VARCHAR(20) NOT NULL,
         PRIMARY KEY (user, guild),
-        FOREIGN KEY (user) REFERENCES users(id),
-        FOREIGN KEY (guild) REFERENCES guilds(id)
+        FOREIGN KEY (user) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (guild) REFERENCES guilds(id) ON DELETE CASCADE
     `,
 );
 
@@ -101,8 +101,6 @@ logger.debug("[DB] Initialized root admin");
 
 await query(
     `INSERT INTO roles VALUES
-        ("banshares", "Permission to submit banshares",       "guild"),
-        ("developer", "Verified TCN developer",               "global"),
         ("staff",     "Staff of a TCN guild",                 "pseudo"),
         ("observer",  "TCN observer (administrator)",         "pseudo"),
         ("owner",     "Server Owners of TCN guilds",          "pseudo"),
@@ -115,6 +113,7 @@ await query(
 logger.debug("[DB] Initialized base roles");
 
 if (Bun.env.DEBUG) {
+    await query(`INSERT INTO roles VALUES ("banshares", "Permission to submit banshares", "guild"), ("developer", "Verified TCN developer", "global")`);
     await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE id = id`, [testData.ADMIN_2]);
     await query(`INSERT INTO characters VALUES ? ON DUPLICATE KEY UPDATE id = id`, [testData.CHARACTERS]);
     await query(`INSERT INTO guilds VALUES (?, "Test Guild", ?, ?, ?, ?, DEFAULT)`, [

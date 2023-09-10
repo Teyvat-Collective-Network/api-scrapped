@@ -7,6 +7,7 @@ const ajv = new Ajv({ removeAdditional: true, coerceTypes: false });
 const boolean = { type: "boolean" };
 const string = { type: "string" };
 const snowflake = { type: "string", pattern: "^\\d+$", minLength: 17, maxLength: 20 };
+const roleId = { type: "string", pattern: "^[a-z-]+$", minLength: 1, maxLength: 32 };
 
 const data: Record<string, spec> = Object.entries({
     "* GET /auth/key-info": { auth: true },
@@ -92,6 +93,29 @@ const data: Record<string, spec> = Object.entries({
         },
     },
     "* DELETE /guilds/:guildId": { auth: true, scope: "guilds/delete", schema: { params: { type: "object", properties: { guildId: snowflake } } } },
+    "* GET /roles": {},
+    "* GET /roles/:roleId": { schema: { params: { type: "object", properties: { roleId } } } },
+    "* POST /roles/:roleId": {
+        auth: true,
+        scope: "roles/write",
+        schema: {
+            params: { type: "object", properties: { roleId } },
+            body: {
+                type: "object",
+                properties: { description: { type: "string", minLength: 1, maxLength: 256 }, assignment: { enum: ["pseudo", "global", "guild", "all"] } },
+                required: ["description"],
+            },
+        },
+    },
+    "* PATCH /roles/:roleId": {
+        auth: true,
+        scope: "roles/write",
+        schema: {
+            params: { type: "object", properties: { roleId } },
+            body: { type: "object", properties: { description: { type: "string", minLength: 1, maxLength: 256 } } },
+        },
+    },
+    "* DELETE /roles/:roleId": { auth: true, scope: "roles/delete", schema: { params: { type: "object", properties: { roleId } } } },
 } satisfies Record<string, base & { schema?: Record<string, any> }>).reduce(
     (o, [k, v]) => ({ ...o, [k]: { ...v, schema: v.schema && Object.entries(v.schema).reduce((o, [k, v]) => ({ ...o, [k]: ajv.compile(v) }), {}) } }),
     {},

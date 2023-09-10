@@ -9,4 +9,6 @@ export default {
     GUILD_2: { id: "1074629732521488434", name: "Leaf Mains", mascot: "sayu", invite: "yv2RS2q83V" },
     GUILD_3: { name: "Sans Mains", mascot: "kazuha", invite: "3EWdJcwGKc" },
     OTHER_INVITE: "FG2wpbywSx",
+    ROLE: { id: "test-role", description: "Test Role", assignment: "all" },
+    ROLE_2: { description: "Test Role V2" },
 } as const;

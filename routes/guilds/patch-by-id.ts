@@ -21,14 +21,14 @@ export default {
 
         if (body.invite) {
             const req = await di(`!GET /invite/${encodeURIComponent(body.invite)}`);
-            if (!req.ok) throw [400, 4101, "The invite does not exist."];
+            if (!req.ok) throw [400, codes.INVALID_INVITE, "The invite does not exist."];
 
             const res = await req.json();
-            if (res.guild.id !== guildId) throw [400, 4101, "The invite points to the wrong guild."];
-            if (res.maxAge) throw [400, 4101, "The invite is not permanent."];
-            if (res.guild.vanityURLCode === res.code) throw [400, 4101, "The invite is a vanity URL."];
+            if (res.guild.id !== guildId) throw [400, codes.INVALID_INVITE, "The invite points to the wrong guild."];
+            if (res.maxAge) throw [400, codes.INVALID_INVITE, "The invite is not permanent."];
+            if (res.guild.vanityURLCode === res.code) throw [400, codes.INVALID_INVITE, "The invite is a vanity URL."];
             if (res.targetUser || res.targetApplication || res.stageInstance || res.guildScheduledEvent)
-                throw [400, 4101, "The invite points to a user, application, stage channel, or event instead of the guild."];
+                throw [400, codes.INVALID_INVITE, "The invite points to a user, application, stage channel, or event instead of the guild."];
 
             code = res.code;
         }
@@ -41,11 +41,10 @@ export default {
 
         for (const key of ["name", "mascot", "invite", "owner", "advisor", "delegated"]) {
             const value = key === "invite" ? code : body[key];
+            if (value === undefined) continue;
 
-            if (value !== undefined) {
-                set.push(`${key} = ?`);
-                values.push(value);
-            }
+            set.push(`${key} = ?`);
+            values.push(value);
         }
 
         await query(`UPDATE guilds SET ${set.join(", ")} WHERE id = ?`, [...values, guildId]);

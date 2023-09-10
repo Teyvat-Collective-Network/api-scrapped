@@ -1,11 +1,11 @@
 import { describe, expect, test } from "bun:test";
-import api from "../api.ts";
-import { forge, forgeAdmin, forgeOwner, test401, expectError, testScope, randomId } from "../utils.ts";
 import codes from "../../lib/codes.ts";
+import api from "../api.ts";
 import testData from "../testData.ts";
+import { expect403, expectError, forgeAdmin, forgeOwner, randomId, test401, testScope } from "../utils.ts";
 
 function testUser(user: any) {
-    expect(user).not.toBeUndefined();
+    expect(user).toBeDefined();
     expect(user).toHaveProperty("guilds");
     expect(user.observer).toBe(true);
     expect(user.owner).toBeBoolean();
@@ -44,12 +44,11 @@ describe("PATCH /users/:userId", () => {
     const id = randomId();
     const route = `PATCH /v1/users/${id}`;
 
-    test("401", test401(route));
-    test("scope", testScope(route));
+    test401(route);
+    testScope(route);
 
     test("set observer is observer only", async () => {
-        const req = await api(forge(), `!${route}`, { observer: true });
-        await expectError(req, 403, codes.FORBIDDEN);
+        await expect403(route, { observer: true });
     });
 
     for (const observer of [true, false])
@@ -65,12 +64,11 @@ for (const method of ["PUT", "DELETE"])
         const id = randomId();
         const route = `${method} /v1/users/${id}/roles/developer`;
 
-        test("401", test401(route));
-        test("scope", testScope(route));
+        test401(route);
+        testScope(route);
 
         test("observer only", async () => {
-            const req = await api(forge(), `!${route}`);
-            await expectError(req, 403, codes.FORBIDDEN);
+            await expect403(route);
         });
 
         test("block invalid roles", async () => {
@@ -96,12 +94,11 @@ for (const method of ["PUT", "DELETE"])
         const guild = testData.GUILD.id;
         const route = `${method} /v1/users/${id}/roles/banshares/${guild}`;
 
-        test("401", test401(route));
-        test("scope", testScope(route));
+        test401(route);
+        testScope(route);
 
         test("observer/owner only", async () => {
-            const req = await api(forge(), `!${route}`);
-            await expectError(req, 403, codes.FORBIDDEN);
+            await expect403(route);
         });
 
         test("block invalid roles", async () => {
