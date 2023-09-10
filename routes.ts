@@ -1,6 +1,6 @@
 import Ajv from "ajv";
 import compile from "./compile.ts";
-import { base, spec } from "./types.ts";
+import { base, spec } from "./lib/types.ts";
 
 const ajv = new Ajv({ removeAdditional: true, coerceTypes: false });
 
@@ -52,6 +52,46 @@ const data: Record<string, spec> = Object.entries({
         scope: "users/write",
         schema: { params: { type: "object", properties: { userId: snowflake, roleId: string, guildId: snowflake } } },
     },
+    "* GET /guilds": {},
+    "* GET /guilds/:guildId": { schema: { params: { type: "object", properties: { guildId: snowflake } } } },
+    "* POST /guilds/:guildId": {
+        auth: true,
+        scope: "guilds/write",
+        schema: {
+            params: { type: "object", properties: { guildId: snowflake } },
+            body: {
+                type: "object",
+                properties: {
+                    name: { type: "string", minLength: 1, maxLength: 32 },
+                    mascot: string,
+                    invite: string,
+                    owner: snowflake,
+                    advisor: snowflake,
+                    delegated: boolean,
+                },
+                required: ["name", "mascot", "invite", "owner", "delegated"],
+            },
+        },
+    },
+    "* PATCH /guilds/:guildId": {
+        auth: true,
+        scope: "guilds/write",
+        schema: {
+            params: { type: "object", properties: { guildId: snowflake } },
+            body: {
+                type: "object",
+                properties: {
+                    name: { type: "string", minLength: 1, maxLength: 32 },
+                    mascot: string,
+                    invite: string,
+                    owner: snowflake,
+                    advisor: snowflake,
+                    delegated: boolean,
+                },
+            },
+        },
+    },
+    "* DELETE /guilds/:guildId": { auth: true, scope: "guilds/delete", schema: { params: { type: "object", properties: { guildId: snowflake } } } },
 } satisfies Record<string, base & { schema?: Record<string, any> }>).reduce(
     (o, [k, v]) => ({ ...o, [k]: { ...v, schema: v.schema && Object.entries(v.schema).reduce((o, [k, v]) => ({ ...o, [k]: ajv.compile(v) }), {}) } }),
     {},

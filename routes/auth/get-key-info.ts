@@ -1,4 +1,4 @@
-import { RouteMap } from "../../types.js";
+import { RouteMap } from "../../lib/types.js";
 
 export default {
     async "* GET /auth/key-info"({ user }) {

@@ -1,6 +1,6 @@
 import query from "../../lib/query.js";
 import uptime from "../../lib/uptime.js";
-import { RouteMap } from "../../types.js";
+import { RouteMap } from "../../lib/types.js";
 
 export default {
     async "* GET /stats"() {

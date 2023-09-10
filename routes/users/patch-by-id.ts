@@ -1,6 +1,6 @@
 import { getUser } from "../../lib/db.ts";
 import query from "../../lib/query.ts";
-import { RouteMap } from "../../types.ts";
+import { RouteMap } from "../../lib/types.ts";
 
 export default {
     async "* PATCH /users/:userId"({ params: { userId }, body, user }) {

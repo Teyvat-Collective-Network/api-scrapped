@@ -1,12 +1,14 @@
 import fs from "fs";
 import compile, { versions } from "./compile.ts";
 import query from "./lib/query.ts";
+import { Routes, User, spec } from "./lib/types.ts";
 import routes from "./routes.ts";
-import { RouteMap, Routes, User, spec } from "./types.ts";
 
-import "./lib/setup.ts";
-import jwt from "./lib/jwt.ts";
+import codes from "./lib/codes.ts";
 import { getUser } from "./lib/db.ts";
+import jwt from "./lib/jwt.ts";
+import logger from "./lib/logger.ts";
+import "./lib/setup.ts";
 
 const handlers: Routes = {};
 
@@ -28,6 +30,16 @@ Bun.serve({
     async fetch(req) {
         const url = new URL(req.url);
 
+        const log = (result: string, object?: any) => {
+            const message = `[API] ${req.method} ${url.pathname}: ${result}`;
+
+            if (object)
+                if (JSON.stringify(object).match(/[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]/))
+                    logger.trace({ censored: "Object may contain a token so it was censored." }, message);
+                else logger.trace(object, message);
+            else logger.trace(message);
+        };
+
         for (const version of versions)
             if (url.pathname.startsWith(`/${version}`)) {
                 try {
@@ -37,7 +49,7 @@ Bun.serve({
                     const method = req.method.toUpperCase();
 
                     const options = routes[version][method];
-                    if (!options) throw 404;
+                    if (!options) throw [404, codes.NOT_FOUND, "Route not found."];
 
                     const pathlist = path.slice(1).split("/");
 
@@ -70,7 +82,7 @@ Bun.serve({
                         break;
                     }
 
-                    if (!route) throw 404;
+                    if (!route) throw [404, codes.NOT_FOUND, "Route not found."];
 
                     let user: User | undefined = undefined;
 
@@ -83,8 +95,13 @@ Bun.serve({
                             const [invalidation] = await query(`SELECT invalidated FROM invalidations WHERE id = ?`, [payload.id]);
 
                             if (!invalidation || payload.created > invalidation.invalidated) {
-                                if (payload.forge) user = payload.data;
-                                else {
+                                if (payload.forge) {
+                                    if (!Bun.env.DEBUG) {
+                                        throw [403, codes.TEST_KEY, "The provided key is a test key."];
+                                    }
+
+                                    user = payload.data;
+                                } else {
                                     const data = await getUser(payload.id);
                                     user = { ...payload, ...data };
                                 }
@@ -92,7 +109,7 @@ Bun.serve({
                         }
                     }
 
-                    if (route.auth && !user) throw [401, { error: "No authorization was provided." }];
+                    if (route.auth && !user) throw [401, codes.MISSING_AUTH, "No authorization was provided."];
 
                     if (route.scope) {
                         let { scope } = route;
@@ -100,7 +117,7 @@ Bun.serve({
                         if (user!.scopes && !user!.scopes.includes("all"))
                             while (true) {
                                 if (user!.scopes.includes(scope)) break;
-                                if (!scope.includes("/")) throw [403, { error: "Provided key does not have the required scope." }];
+                                if (!scope.includes("/")) throw [403, codes.MISSING_SCOPE, "Provided key does not have the required scope."];
                                 scope = scope.replace(/\/[^\/]*$/, "");
                             }
                     }
@@ -114,31 +131,52 @@ Bun.serve({
                     }
 
                     if (route.schema?.body) {
-                        if (!body) throw [400, { error: "No body provided." }];
-                        if (!route.schema.body(body)) throw [400, route.schema.body.errors];
+                        if (!body) throw [400, codes.MISSING_BODY, "No body provided."];
+                        if (!route.schema.body(body)) throw [400, codes.INVALID_BODY, { message: "Invalid body provided.", error: route.schema.body.errors }];
                     }
 
                     const handle = handlers[version][method]?.[realpath!];
-                    if (!handle) throw 501;
+                    if (!handle) throw [501, codes.NOT_IMPLEMENTED, "Not implemented."];
 
                     const data = await handle({ req, params, body, user: user!, token: token! });
 
-                    if (data instanceof Response) return data;
-                    if (typeof data === "string") return new Response(data);
-                    if (data === undefined) return new Response();
-                    return new Response(JSON.stringify(data));
-                } catch (error) {
-                    if (typeof error === "number") return new Response("", { status: error });
-
-                    if (Array.isArray(error) && error.length === 2) {
-                        const [status, message] = error;
-                        if (typeof status === "number") return new Response(typeof message === "string" ? message : JSON.stringify(message), { status });
+                    if (data instanceof Response) {
+                        log(`${data.status}`, await data.json());
+                        return data;
                     }
 
-                    throw error;
+                    if (typeof data === "string") {
+                        log("200", { data });
+                        return new Response(data);
+                    }
+
+                    if (data === undefined) {
+                        log("200");
+                        return new Response();
+                    }
+
+                    log("200", data);
+                    return new Response(JSON.stringify(data));
+                } catch (error) {
+                    if (error === 403) error = [403, codes.FORBIDDEN, "Insufficient permissions."];
+
+                    if (Array.isArray(error) && error.length === 3) {
+                        const [status, code, object] = error;
+                        const details = typeof object === "string" ? { message: object } : object;
+
+                        if (typeof status === "number" && typeof code === "number") {
+                            log(`${status} / ${code}`, details);
+                            return new Response(JSON.stringify({ code, ...details }), { status });
+                        }
+                    }
+
+                    logger.error(error);
+                    return new Response(JSON.stringify({ code: 1, message: "Unexpected error." }), { status: 500 });
                 }
             }
 
-        return new Response("", { status: 404 });
+        return new Response(JSON.stringify({ code: codes.INVALID_VERSION, message: "Invalid API version." }), { status: 404 });
     },
 });
+
+logger.info("[API] READY");

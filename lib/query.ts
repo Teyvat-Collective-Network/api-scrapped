@@ -1,5 +1,5 @@
 import mysql from "mysql";
-import logger from "../logger.ts";
+import logger from "./logger.ts";
 
 const connection = mysql.createConnection({
     host: Bun.env.DATABASE_HOST,
@@ -11,7 +11,7 @@ const connection = mysql.createConnection({
 await new Promise((resolve, reject) => connection.connect((error) => (error ? reject(error) : resolve(null))));
 logger.info("[DB] CONNECTED");
 
-const db = Bun.env.TEST ? "tcntest" : "tcn";
+const db = Bun.env.TEST || Bun.env.TEST_CLIENT ? "tcntest" : "tcn";
 
 if (Bun.env.TEST) connection.query(`DROP DATABASE tcntest`, () => {});
 
@@ -22,6 +22,6 @@ connection.query(`CREATE DATABASE ${db}`, (error) => {
 
 connection.changeUser({ database: db });
 
-export default function (query: string, params: any[] = []): Promise<any> {
+export default function (query: string, params: readonly any[] = []): Promise<any> {
     return new Promise((resolve, reject) => connection.query(query, params, (error, result) => (error ? reject(error) : resolve(result))));
 }

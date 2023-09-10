@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import api from "../api.ts";
-import { forge, forgeAdmin, test401 } from "../utils.ts";
+import { forge, forgeAdmin, test401, expectError, randomId } from "../utils.ts";
+import codes from "../../lib/codes.ts";
+import testData from "../testData.ts";
 
 describe("GET /auth/key-info", () => {
     const route = `GET /v1/auth/key-info`;
@@ -8,7 +10,7 @@ describe("GET /auth/key-info", () => {
     test("401", test401(route));
 
     test("returns correct info", async () => {
-        const id = "test user id";
+        const id = randomId();
         const expires = Date.now() + 1000;
         const scopes = ["scope 1", "scope 2"];
 
@@ -27,7 +29,7 @@ describe("GET /auth/token", () => {
     test("401", test401(route));
 
     test("returns token", async () => {
-        const token = forge("test user id");
+        const token = forge(randomId());
 
         const req = await api(token, `!${route}`);
         const key = await req.text();
@@ -48,7 +50,7 @@ describe("GET /auth/me", () => {
 
         expect(res.id).toBe(id);
 
-        const guild = res.guilds[Bun.env.TEST_GUILD!];
+        const guild = res.guilds[testData.GUILD.id];
         expect(guild).toMatchObject({ owner: true, advisor: false, voter: true, staff: true });
         for (const role of ["owner", "staff", "voter"]) expect(guild.roles).toContain(role);
 
@@ -62,7 +64,7 @@ describe("POST /auth/invalidate", () => {
     test("401", test401(route));
 
     test("invalidates token", async () => {
-        const token = forge("test user id", { created: Date.now(), expires: Date.now() + 1000 });
+        const token = forge(randomId(), { created: Date.now(), expires: Date.now() + 1000 });
 
         const req1 = await api(token, "!GET /v1/auth/token");
         expect(req1.ok).toBeTrue();
@@ -71,7 +73,7 @@ describe("POST /auth/invalidate", () => {
         expect(req.ok).toBeTrue();
 
         const req2 = await api(token, "!GET /v1/auth/token");
-        expect(req2.ok).toBeFalse();
+        await expectError(req2, 401, codes.MISSING_AUTH);
     });
 });
 
@@ -81,7 +83,7 @@ describe("POST /auth/key", () => {
 
     test("401", test401(route));
 
-    const id = "test user id";
+    const id = randomId();
 
     async function get(options: any, raw: boolean = false) {
         const req = await api(forge(id), `!${route}`, options);
@@ -92,9 +94,12 @@ describe("POST /auth/key", () => {
     }
 
     test("400", async () => {
-        for (const object of [null, {}, { maxage: 0 }, { scopes: [] }, { maxage: -1, scopes: [] }, { maxage: 0, scopes: "" }]) {
+        const req1 = await get(null, true);
+        await expectError(req1, 400, codes.MISSING_BODY);
+
+        for (const object of [{}, { maxage: 0 }, { scopes: [] }, { maxage: -1, scopes: [] }, { maxage: 0, scopes: "" }]) {
             const req = await get(object, true);
-            expect(req.status).toBe(400);
+            await expectError(req, 400, codes.INVALID_BODY);
         }
     });
 
@@ -121,7 +126,7 @@ describe("POST /auth/key", () => {
         expect(res.scopes).toEqual([]);
 
         const req = await api(key, `!${route}`, { maxage: 0, scopes: [] });
-        expect(req.status).toBe(403);
+        await expectError(req, 403, codes.MISSING_SCOPE);
     });
 
     test("expiry", async () => {

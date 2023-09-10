@@ -1,5 +1,5 @@
 import query from "../../lib/query.js";
-import { RouteMap } from "../../types.js";
+import { RouteMap } from "../../lib/types.js";
 
 export default {
     async "* POST /auth/invalidate"({ user }) {

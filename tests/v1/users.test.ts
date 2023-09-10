@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import api from "../api.ts";
-import { forge, forgeAdmin, forgeOwner, test401, testScope } from "../utils.ts";
+import { forge, forgeAdmin, forgeOwner, test401, expectError, testScope, randomId } from "../utils.ts";
+import codes from "../../lib/codes.ts";
+import testData from "../testData.ts";
 
 function testUser(user: any) {
     expect(user).not.toBeUndefined();
@@ -27,18 +29,19 @@ describe("GET /users", () => {
 });
 
 describe("GET /users/:userId", () => {
-    const route = `GET /v1/users/${Bun.env.ADMIN}`;
+    const id = Bun.env.ADMIN;
+    const route = `GET /v1/users/${id}`;
 
     test("get user", async () => {
         const res = await api(null, route);
 
-        expect(res.id).toBe(Bun.env.ADMIN);
+        expect(res.id).toBe(id);
         testUser(res);
     });
 });
 
 describe("PATCH /users/:userId", () => {
-    const id = "0".repeat(20);
+    const id = randomId();
     const route = `PATCH /v1/users/${id}`;
 
     test("401", test401(route));
@@ -46,7 +49,7 @@ describe("PATCH /users/:userId", () => {
 
     test("set observer is observer only", async () => {
         const req = await api(forge(), `!${route}`, { observer: true });
-        expect(req.status).toBe(403);
+        await expectError(req, 403, codes.FORBIDDEN);
     });
 
     for (const observer of [true, false])
@@ -59,7 +62,7 @@ describe("PATCH /users/:userId", () => {
 
 for (const method of ["PUT", "DELETE"])
     describe(`${method} /users/:userId/roles/:roleId`, () => {
-        const id = "0".repeat(20);
+        const id = randomId();
         const route = `${method} /v1/users/${id}/roles/developer`;
 
         test("401", test401(route));
@@ -67,13 +70,13 @@ for (const method of ["PUT", "DELETE"])
 
         test("observer only", async () => {
             const req = await api(forge(), `!${route}`);
-            expect(req.status).toBe(403);
+            await expectError(req, 403, codes.FORBIDDEN);
         });
 
         test("block invalid roles", async () => {
             for (const role of ["staff", "banshares", ""]) {
                 const req = await api(forgeAdmin(), `!${method} /v1/users/${id}/roles/${role}`);
-                expect(req.status).toBe(400);
+                await expectError(req, 400, role ? codes.INVALID_ROLE_TYPE : codes.MISSING_ROLE);
             }
         });
 
@@ -89,8 +92,8 @@ for (const method of ["PUT", "DELETE"])
 
 for (const method of ["PUT", "DELETE"])
     describe(`${method} /users/:userId/roles/:roleId/:guildId`, () => {
-        const id = "0".repeat(20);
-        const guild = Bun.env.TEST_GUILD!;
+        const id = randomId();
+        const guild = testData.GUILD.id;
         const route = `${method} /v1/users/${id}/roles/banshares/${guild}`;
 
         test("401", test401(route));
@@ -98,19 +101,19 @@ for (const method of ["PUT", "DELETE"])
 
         test("observer/owner only", async () => {
             const req = await api(forge(), `!${route}`);
-            expect(req.status).toBe(403);
+            await expectError(req, 403, codes.FORBIDDEN);
         });
 
         test("block invalid roles", async () => {
             for (const role of ["staff", "developer", ""]) {
                 const req = await api(forgeAdmin(), `!${method} /v1/users/${id}/roles/${role}/${guild}`);
-                expect(req.status).toBe(400);
+                await expectError(req, 400, role ? codes.INVALID_ROLE_TYPE : codes.MISSING_ROLE);
             }
         });
 
-        test("block invalid guild", async () => {
+        test("block missing guild", async () => {
             const req = await api(forgeAdmin(), `!${method} /v1/users/${id}/roles/banshares/${id}`);
-            expect(req.status).toBe(400);
+            await expectError(req, 400, codes.MISSING_GUILD);
         });
 
         test("update roles", async () => {

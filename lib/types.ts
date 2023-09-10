@@ -19,6 +19,18 @@ export type User = {
 
 export type Role = { id: string; description: string; assignment: string };
 
+export type Guild = {
+    id: string;
+    name: string;
+    mascot: string;
+    invite: string;
+    owner: string;
+    advisor?: string;
+    voter: string;
+    delegated: boolean;
+    users: Record<string, { staff: boolean; roles: string[] }>;
+};
+
 export type Handler = (data: { req: Request; params: any; body: any; user: User; token: string }) => any;
 
 export type RouteMap = Record<string, Handler>;

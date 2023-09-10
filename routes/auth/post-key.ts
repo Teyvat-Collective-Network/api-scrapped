@@ -1,5 +1,5 @@
 import jwt from "../../lib/jwt.js";
-import { RouteMap } from "../../types.js";
+import { RouteMap } from "../../lib/types.js";
 
 export default {
     async "* POST /auth/key"({ body, user }) {

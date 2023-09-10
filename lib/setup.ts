@@ -1,4 +1,5 @@
-import logger from "../logger.js";
+import testData from "../tests/testData.js";
+import logger from "./logger.js";
 import query from "./query.js";
 
 async function setup(table: string, string: string) {
@@ -53,8 +54,6 @@ await setup(
         owner VARCHAR(20) NOT NULL,
         advisor VARCHAR(20),
         delegated BOOLEAN NOT NULL DEFAULT false,
-        lastToggle BIGINT,
-        allowance BIGINT NOT NULL DEFAULT 5184000000,
         FOREIGN KEY (mascot) REFERENCES characters(id),
         FOREIGN KEY (owner) REFERENCES users(id),
         FOREIGN KEY (advisor) REFERENCES users(id)
@@ -116,8 +115,15 @@ await query(
 logger.debug("[DB] Initialized base roles");
 
 if (Bun.env.DEBUG) {
-    await query(`INSERT INTO characters VALUES ("shenhe", "Shenhe", NULL) ON DUPLICATE KEY UPDATE id = id`);
-    await query(`INSERT INTO guilds VALUES (?, "Test Guild", "shenhe", "invite", ?, NULL, DEFAULT, NULL, DEFAULT)`, [Bun.env.TEST_GUILD, Bun.env.ADMIN]);
+    await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE id = id`, [testData.ADMIN_2]);
+    await query(`INSERT INTO characters VALUES ? ON DUPLICATE KEY UPDATE id = id`, [testData.CHARACTERS]);
+    await query(`INSERT INTO guilds VALUES (?, "Test Guild", ?, ?, ?, ?, DEFAULT)`, [
+        testData.GUILD.id,
+        testData.GUILD.mascot,
+        testData.GUILD.invite,
+        Bun.env.ADMIN,
+        testData.ADMIN_2,
+    ]);
 
     logger.debug("[DB] Initialized debug data");
 }

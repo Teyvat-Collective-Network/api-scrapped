@@ -1,3 +1,5 @@
+import { expect } from "bun:test";
+
 export default async function (token: string | null, route: string, body?: any, init?: RequestInit) {
     let request = route.startsWith("!");
     if (request) route = route.slice(1);
@@ -20,6 +22,18 @@ export default async function (token: string | null, route: string, body?: any, 
     const req = await fetch(`http://localhost:${Bun.env.PORT}${real}`, init);
     if (request) return req;
 
-    if (!req.ok) throw req.status;
-    return await req.json();
+    if (!req.ok) {
+        console.error(`[TEST] API call failed (${req.status})`);
+        console.error(JSON.stringify(await req.json(), undefined, 4));
+
+        expect().fail("API call that was expected to be OK failed");
+    }
+
+    const text = await req.text();
+
+    try {
+        return JSON.parse(text);
+    } catch {
+        return text;
+    }
 }
