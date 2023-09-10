@@ -7,7 +7,7 @@ export default {
     async "* PATCH /roles/:roleId"({ params: { roleId }, body, user }) {
         if (!user.observer) throw 403;
 
-        if (!(await hasRole(roleId))) throw [404, codes.MISSING_ROLE, `No role exists with ID ${roleId}`];
+        if (!(await hasRole(roleId))) throw [404, codes.MISSING_ROLE, `No role exists with ID ${roleId}.`];
 
         const set = [];
         const values = [];

@@ -8,7 +8,7 @@ export default {
         if (!user.observer) throw 403;
 
         if (await hasRole(roleId)) throw [409, codes.DUPLICATE, `A role with ID ${roleId} already exists.`];
-        if (body.assignment === "pseudo") throw [400, codes.INVALID_ROLE_TYPE, "Pseudo roles cannot be created through the API"];
+        if (body.assignment === "pseudo") throw [400, codes.INVALID_ROLE_TYPE, "Pseudo roles cannot be created through the API."];
 
         await query(`INSERT INTO roles VALUES (?)`, [[roleId, body.description, body.assignment]]);
     },

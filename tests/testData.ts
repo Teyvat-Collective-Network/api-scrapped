@@ -11,4 +11,10 @@ export default {
     OTHER_INVITE: "FG2wpbywSx",
     ROLE: { id: "test-role", description: "Test Role", assignment: "all" },
     ROLE_2: { description: "Test Role V2" },
+    ATTRS: [
+        { type: "weapon", id: "sword", name: "Sword", emoji: "<:sword:1021232974848589864>" },
+        { type: "weapon", id: "polearm", name: "Polearm", emoji: "<:polearm:1021233017055871006>" },
+    ],
+    ATTR_1: { type: "test-type", id: "sword", name: "Test Attribute", emoji: "..." },
+    ATTR_2: { id: "test-id", name: "Test Attribute V2", emoji: "... V2" },
 } as const;

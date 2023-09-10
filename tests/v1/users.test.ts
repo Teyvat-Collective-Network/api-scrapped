@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import codes from "../../lib/codes.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { expect403, expectError, forgeAdmin, forgeOwner, randomId, test401, testScope } from "../utils.ts";
+import { expectError, forgeAdmin, forgeOwner, randomSnowflake, test401, test403, testScope } from "../utils.ts";
 
 function testUser(user: any) {
     expect(user).toBeDefined();
@@ -41,15 +41,12 @@ describe("GET /users/:userId", () => {
 });
 
 describe("PATCH /users/:userId", () => {
-    const id = randomId();
+    const id = randomSnowflake();
     const route = `PATCH /v1/users/${id}`;
 
     test401(route);
     testScope(route);
-
-    test("set observer is observer only", async () => {
-        await expect403(route, { observer: true });
-    });
+    test403(route, { observer: true });
 
     for (const observer of [true, false])
         test(`update user (observer := ${observer})`, async () => {
@@ -61,15 +58,12 @@ describe("PATCH /users/:userId", () => {
 
 for (const method of ["PUT", "DELETE"])
     describe(`${method} /users/:userId/roles/:roleId`, () => {
-        const id = randomId();
+        const id = randomSnowflake();
         const route = `${method} /v1/users/${id}/roles/developer`;
 
         test401(route);
         testScope(route);
-
-        test("observer only", async () => {
-            await expect403(route);
-        });
+        test403("route");
 
         test("block invalid roles", async () => {
             for (const role of ["staff", "banshares", ""]) {
@@ -90,16 +84,13 @@ for (const method of ["PUT", "DELETE"])
 
 for (const method of ["PUT", "DELETE"])
     describe(`${method} /users/:userId/roles/:roleId/:guildId`, () => {
-        const id = randomId();
+        const id = randomSnowflake();
         const guild = testData.GUILD.id;
         const route = `${method} /v1/users/${id}/roles/banshares/${guild}`;
 
         test401(route);
         testScope(route);
-
-        test("observer/owner only", async () => {
-            await expect403(route);
-        });
+        test403(route);
 
         test("block invalid roles", async () => {
             for (const role of ["staff", "developer", ""]) {

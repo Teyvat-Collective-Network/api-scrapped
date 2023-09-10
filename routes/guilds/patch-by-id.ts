@@ -8,7 +8,7 @@ export default {
     async "* PATCH /guilds/:guildId"({ params: { guildId }, body, user }) {
         if (!user.observer) throw 403;
 
-        if (!(await hasGuild(guildId))) throw [404, codes.MISSING_GUILD, `No guild exists with ID ${guildId}`];
+        if (!(await hasGuild(guildId))) throw [404, codes.MISSING_GUILD, `No guild exists with ID ${guildId}.`];
 
         const guild = await getGuild(guildId);
 

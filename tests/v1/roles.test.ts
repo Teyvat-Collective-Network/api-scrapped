@@ -4,7 +4,7 @@ import { ensureUser, getRole, getUser, hasRole } from "../../lib/db.ts";
 import query from "../../lib/query.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { expect403, expectError, forgeAdmin, randomId, test401, testScope } from "../utils.ts";
+import { expectError, forgeAdmin, randomSnowflake, test401, test403, testScope } from "../utils.ts";
 
 function testRole(role: any) {
     expect(role.id).toBeString();
@@ -51,10 +51,7 @@ describe("POST /roles/:roleId", () => {
 
     test401(route);
     testScope(route);
-
-    test("observer only", async () => {
-        await expect403(route, role);
-    });
+    test403(route, role);
 
     test("block duplicate role", async () => {
         const req = await api(forgeAdmin(), `!POST /v1/roles/observer`, role);
@@ -87,10 +84,7 @@ describe("PATCH /roles/:roleId", async () => {
 
     test401(route);
     testScope(route);
-
-    test("observer only", async () => {
-        await expect403(route, {});
-    });
+    test403(route, {});
 
     test("block missing role", async () => {
         const req = await api(forgeAdmin(), `!PATCH /v1/roles/zxcvbnm`, {});
@@ -114,10 +108,7 @@ describe("DELETE /roles/:roleId", async () => {
 
     test401(route);
     testScope(route);
-
-    test("observer only", async () => {
-        await expect403(route);
-    });
+    test403(route);
 
     test("block missing role", async () => {
         const req = await api(forgeAdmin(), `!DELETE /v1/roles/zxcvbnm`);
@@ -130,7 +121,7 @@ describe("DELETE /roles/:roleId", async () => {
     });
 
     test("delete role", async () => {
-        const user = randomId();
+        const user = randomSnowflake();
 
         await ensureUser(user);
         await query(`INSERT INTO global_roles VALUES (?, ?) ON DUPLICATE KEY UPDATE user = user`, [user, id]);

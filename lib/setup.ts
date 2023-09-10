@@ -47,8 +47,8 @@ await setup(
 await setup(
     "attributes",
     `
-        id VARCHAR(32) NOT NULL,
         type VARCHAR(32) NOT NULL,
+        id VARCHAR(32) NOT NULL,
         name VARCHAR(64) NOT NULL,
         emoji VARCHAR(64),
         PRIMARY KEY (type, id)
@@ -139,6 +139,7 @@ if (Bun.env.DEBUG) {
     await query(`INSERT INTO roles VALUES ("banshares", "Permission to submit banshares", "guild"), ("developer", "Verified TCN developer", "global")`);
     await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE id = id`, [testData.ADMIN_2]);
     await query(`INSERT INTO characters VALUES ? ON DUPLICATE KEY UPDATE id = id`, [testData.CHARACTERS]);
+    await query(`INSERT INTO attributes VALUES ? ON DUPLICATE KEY UPDATE id = id`, [testData.ATTRS.map((x) => [x.type, x.id, x.name, x.emoji])]);
     await query(`INSERT INTO guilds VALUES (?, "Test Guild", ?, ?, ?, ?, DEFAULT)`, [
         testData.GUILD.id,
         testData.GUILD.mascot,

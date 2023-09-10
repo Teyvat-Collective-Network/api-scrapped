@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import codes from "../../lib/codes.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { expectError, forge, forgeAdmin, randomId, test401 } from "../utils.ts";
+import { expectError, forge, forgeAdmin, randomSnowflake, test401 } from "../utils.ts";
 
 describe("GET /auth/key-info", () => {
     const route = `GET /v1/auth/key-info`;
@@ -10,7 +10,7 @@ describe("GET /auth/key-info", () => {
     test401(route);
 
     test("returns correct info", async () => {
-        const id = randomId();
+        const id = randomSnowflake();
         const expires = Date.now() + 1000;
         const scopes = ["scope 1", "scope 2"];
 
@@ -29,7 +29,7 @@ describe("GET /auth/token", () => {
     test401(route);
 
     test("returns token", async () => {
-        const token = forge(randomId());
+        const token = forge(randomSnowflake());
 
         const req = await api(token, `!${route}`);
         const key = await req.text();
@@ -64,7 +64,7 @@ describe("POST /auth/invalidate", () => {
     test401(route);
 
     test("invalidates token", async () => {
-        const token = forge(randomId(), { created: Date.now(), expires: Date.now() + 1000 });
+        const token = forge(randomSnowflake(), { created: Date.now(), expires: Date.now() + 1000 });
 
         const req1 = await api(token, "!GET /v1/auth/token");
         expect(req1.ok).toBeTrue();
@@ -83,7 +83,7 @@ describe("POST /auth/key", () => {
 
     test401(route);
 
-    const id = randomId();
+    const id = randomSnowflake();
 
     async function get(options: any, raw: boolean = false) {
         const req = await api(forge(id), `!${route}`, options);
