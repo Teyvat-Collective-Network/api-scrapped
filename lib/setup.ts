@@ -136,11 +136,17 @@ await query(
 logger.debug("[DB] Initialized base roles");
 
 if (Bun.env.DEBUG) {
-    await query(`INSERT INTO roles VALUES ("banshares", "Permission to submit banshares", "guild"), ("developer", "Verified TCN developer", "global")`);
+    await query(
+        `INSERT INTO roles VALUES
+            ("banshares", "Permission to submit banshares", "guild" ),
+            ("developer", "Verified TCN developer",         "global")
+        ON DUPLICATE KEY UPDATE id = id`,
+    );
+
     await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE id = id`, [testData.ADMIN_2]);
     await query(`INSERT INTO characters VALUES ? ON DUPLICATE KEY UPDATE id = id`, [testData.CHARACTERS]);
     await query(`INSERT INTO attributes VALUES ? ON DUPLICATE KEY UPDATE id = id`, [testData.ATTRS.map((x) => [x.type, x.id, x.name, x.emoji])]);
-    await query(`INSERT INTO guilds VALUES (?, "Test Guild", ?, ?, ?, ?, DEFAULT)`, [
+    await query(`INSERT INTO guilds VALUES (?, "Test Guild", ?, ?, ?, ?, DEFAULT) ON DUPLICATE KEY UPDATE id = id`, [
         testData.GUILD.id,
         testData.GUILD.mascot,
         testData.GUILD.invite,
