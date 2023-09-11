@@ -21,7 +21,7 @@ export default {
             values.push(value);
         }
 
-        await query(`UPDATE attributes SET ${set.join(", ")} WHERE type = ? AND id = ?`, [...values, type, id]);
+        if (set.length > 0) await query(`UPDATE attributes SET ${set.join(", ")} WHERE type = ? AND id = ?`, [...values, type, id]);
 
         return await getAttribute(type, body.id || id);
     },

@@ -41,7 +41,7 @@ Bun.serve({
         };
 
         for (const version of versions)
-            if (url.pathname.startsWith(`/${version}`)) {
+            if ((version !== "test" || Bun.env.DEBUG) && url.pathname.startsWith(`/${version}`)) {
                 try {
                     const path = url.pathname.slice(version.length + 1);
                     let realpath: string | null = null;
@@ -175,6 +175,7 @@ Bun.serve({
                 }
             }
 
+        log("[INVALID]");
         return new Response(JSON.stringify({ code: codes.INVALID_VERSION, message: "Invalid API version." }), { status: 404 });
     },
 });

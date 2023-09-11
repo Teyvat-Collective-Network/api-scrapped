@@ -1,6 +1,6 @@
 type RRR<T> = Record<string, Record<string, Record<string, T>>>;
 
-export const versions = ["v1"];
+export const versions = ["v1", "test"];
 
 export default function <T>(data: Record<string, T>, entries?: RRR<T>): RRR<T> {
     entries ??= {};

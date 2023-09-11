@@ -17,4 +17,6 @@ export default {
     ],
     ATTR_1: { type: "test-type", id: "sword", name: "Test Attribute", emoji: "..." },
     ATTR_2: { id: "test-id", name: "Test Attribute V2", emoji: "... V2" },
+    CHAR_1: { name: "Character Name", short: "Char", attributes: { weapon: "sword" } },
+    CHAR_2: { name: "Character Name V2", short: "Char 2", attributes: { weapon: "polearm" } },
 } as const;

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import codes from "../../lib/codes.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { expectError, forgeAdmin, forgeOwner, randomSnowflake, test401, test403, testScope } from "../utils.ts";
+import { expectError, forgeAdmin, forgeOwner, randomSnowflake, testE, testScope } from "../utils.ts";
 
 function testUser(user: any) {
     expect(user).toBeDefined();
@@ -44,9 +44,13 @@ describe("PATCH /users/:userId", () => {
     const id = randomSnowflake();
     const route = `PATCH /v1/users/${id}`;
 
-    test401(route);
     testScope(route);
-    test403(route, { observer: true });
+    testE(401, route);
+    testE(403, route, { observer: true });
+
+    test("blank patch", async () => {
+        await api(forgeAdmin(), route, {});
+    });
 
     for (const observer of [true, false])
         test(`update user (observer := ${observer})`, async () => {
@@ -61,9 +65,9 @@ for (const method of ["PUT", "DELETE"])
         const id = randomSnowflake();
         const route = `${method} /v1/users/${id}/roles/developer`;
 
-        test401(route);
         testScope(route);
-        test403("route");
+        testE(401, route);
+        testE(403, route);
 
         test("block invalid roles", async () => {
             for (const role of ["staff", "banshares", ""]) {
@@ -88,20 +92,16 @@ for (const method of ["PUT", "DELETE"])
         const guild = testData.GUILD.id;
         const route = `${method} /v1/users/${id}/roles/banshares/${guild}`;
 
-        test401(route);
         testScope(route);
-        test403(route);
+        testE(401, route);
+        testE(403, route);
+        testE([400, codes.MISSING_GUILD], `${method} /v1/users/${id}/roles/banshares/${id}`);
 
         test("block invalid roles", async () => {
             for (const role of ["staff", "developer", ""]) {
                 const req = await api(forgeAdmin(), `!${method} /v1/users/${id}/roles/${role}/${guild}`);
                 await expectError(req, 400, role ? codes.INVALID_ROLE_TYPE : codes.MISSING_ROLE);
             }
-        });
-
-        test("block missing guild", async () => {
-            const req = await api(forgeAdmin(), `!${method} /v1/users/${id}/roles/banshares/${id}`);
-            await expectError(req, 400, codes.MISSING_GUILD);
         });
 
         test("update roles", async () => {

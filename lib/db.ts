@@ -1,5 +1,5 @@
 import query from "./query.ts";
-import { Attribute, Guild, Role, User } from "./types.ts";
+import { Attribute, Character, Guild, Role, User } from "./types.ts";
 import { addToSet } from "./utils.ts";
 
 const defaultGuild = () => ({ owner: false, advisor: false, voter: false, staff: false, roles: [] });
@@ -105,6 +105,19 @@ export async function getGuild(id: string): Promise<Guild> {
 
 export async function getAttribute(type: string, id: string): Promise<Attribute> {
     const [data] = await query(`SELECT * FROM attributes WHERE type = ? AND id = ?`, [type, id]);
+    return data;
+}
+
+export async function getCharacter(id: string): Promise<Character> {
+    const [data] = await query(`SELECT * FROM characters WHERE id = ?`, [id]);
+    if (!data) return data;
+
+    data.attributes = {};
+
+    for (const { type, value } of await query(`SELECT * FROM character_attributes WHERE \`character\` = ?`, [id])) {
+        data.attributes[type] = value;
+    }
+
     return data;
 }
 

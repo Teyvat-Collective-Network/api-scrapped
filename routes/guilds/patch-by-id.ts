@@ -50,7 +50,7 @@ export default {
             values.push(value);
         }
 
-        await query(`UPDATE guilds SET ${set.join(", ")} WHERE id = ?`, [...values, guildId]);
+        if (set.length > 0) await query(`UPDATE guilds SET ${set.join(", ")} WHERE id = ?`, [...values, guildId]);
 
         return await getGuild(guildId);
     },

@@ -33,6 +33,8 @@ export type Guild = {
 
 export type Attribute = { type: string; id: string; name: string; emoji: string };
 
+export type Character = { id: string; name: string; short?: string; attributes: Record<string, string> };
+
 export type Handler = (data: { req: Request; params: any; body: any; user: User; token: string }) => any;
 
 export type RouteMap = Record<string, Handler>;

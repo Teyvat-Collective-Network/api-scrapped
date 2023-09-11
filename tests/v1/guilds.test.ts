@@ -1,10 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import codes from "../../lib/codes.ts";
-import { ensureUser, getGuild, hasGuild } from "../../lib/db.ts";
+import { getGuild, hasGuild } from "../../lib/db.ts";
 import query from "../../lib/query.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { expectError, forgeAdmin, randomSnowflake, test401, test403, testScope } from "../utils.ts";
+import { forgeAdmin, randomSnowflake, testE, testScope } from "../utils.ts";
+import { setupGuild } from "./setup.ts";
 
 function testGuild(guild: any) {
     expect(guild).toBeDefined();
@@ -16,18 +17,6 @@ function testGuild(guild: any) {
     expect(guild.voter).toBe(guild.delegated ? guild.advisor : guild.owner);
     expect(guild).toHaveProperty("delegated");
     expect(guild).toHaveProperty("users");
-}
-
-async function setupGuild(id: string) {
-    const values: any[] = [id, testData.GUILD_2.name, testData.GUILD_2.mascot, testData.GUILD_2.invite, randomSnowflake(), randomSnowflake(), false];
-
-    await ensureUser(values[4]);
-    await ensureUser(values[5]);
-
-    await query(`INSERT INTO guilds VALUES ? ON DUPLICATE KEY UPDATE id = ?, name = ?, mascot = ?, invite = ?, owner = ?, advisor = ?, delegated = ?`, [
-        [values],
-        ...values,
-    ]);
 }
 
 describe("GET /guilds", () => {
@@ -48,10 +37,7 @@ describe("GET /guilds/:guildId", () => {
     const { id } = testData.GUILD;
     const route = `GET /v1/guilds/${id}`;
 
-    test("404", async () => {
-        const req = await api(null, `!GET /v1/guilds/${randomSnowflake()}`);
-        expectError(req, 404, codes.MISSING_GUILD);
-    });
+    testE([404, codes.MISSING_GUILD], `GET /v1/guilds/${randomSnowflake()}`);
 
     test("get guild", async () => {
         const res = await api(null, route);
@@ -73,32 +59,13 @@ describe("POST /guilds/:guildId", async () => {
 
     const del = () => query(`DELETE FROM guilds WHERE id = ?`, [id]);
 
-    test401(route);
     testScope(route);
-    test403(route, guild);
-
-    test("block duplicate guild", async () => {
-        const req = await api(forgeAdmin(), `!POST /v1/guilds/${testData.GUILD.id}`, guild);
-        await expectError(req, 409, codes.DUPLICATE);
-    });
-
-    test("block delegated without advisor", async () => {
-        await del();
-        const req = await api(forgeAdmin(), `!${route}`, { ...guild, advisor: null, delegated: true });
-        await expectError(req, 400, codes.DELEGATED_WITHOUT_ADVISOR);
-    });
-
-    test("block invalid character", async () => {
-        await del();
-        const req = await api(forgeAdmin(), `!${route}`, { ...guild, mascot: "" });
-        await expectError(req, 400, codes.MISSING_CHARACTER);
-    });
-
-    test("block invalid invite", async () => {
-        await del();
-        const req = await api(forgeAdmin(), `!${route}`, { ...guild, invite: testData.OTHER_INVITE });
-        await expectError(req, 400, codes.INVALID_INVITE);
-    });
+    testE(401, route);
+    testE(403, route, guild);
+    testE(409, `POST /v1/guilds/${testData.GUILD.id}`, guild);
+    testE([400, codes.DELEGATED_WITHOUT_ADVISOR], `${route}`, { ...guild, advisor: null, delegated: true }, del);
+    testE([400, codes.MISSING_CHARACTER], `${route}`, { ...guild, mascot: "" }, del);
+    testE([400, codes.INVALID_INVITE], `${route}`, { ...guild, invite: testData.OTHER_INVITE }, del);
 
     test("create guild", async () => {
         await api(forgeAdmin(), route, guild);
@@ -122,29 +89,20 @@ describe("PATCH /guilds/:guildId", async () => {
 
     await setupGuild(id);
 
-    test401(route);
     testScope(route);
-    test403(route, {});
+    testE(401, route);
+    testE(403, route, {});
+    testE([404, codes.MISSING_GUILD], `PATCH /v1/guilds/${randomSnowflake()}`, {});
 
-    test("block missing guild", async () => {
-        const req = await api(forgeAdmin(), `!PATCH /v1/guilds/${randomSnowflake()}`, {});
-        await expectError(req, 404, codes.MISSING_GUILD);
-    });
+    testE([400, codes.DELEGATED_WITHOUT_ADVISOR], `${route}`, { advisor: undefined, delegated: true }, () =>
+        query(`UPDATE guilds SET advisor = NULL WHERE id = ?`, [id]),
+    );
 
-    test("block delegated without advisor", async () => {
-        await query(`UPDATE guilds SET advisor = NULL WHERE id = ?`, [id]);
-        const req = await api(forgeAdmin(), `!${route}`, { advisor: undefined, delegated: true });
-        await expectError(req, 400, codes.DELEGATED_WITHOUT_ADVISOR);
-    });
+    testE([400, codes.MISSING_CHARACTER], `${route}`, { mascot: "" });
+    testE([400, codes.INVALID_INVITE], `${route}`, { invite: testData.OTHER_INVITE });
 
-    test("block invalid character", async () => {
-        const req = await api(forgeAdmin(), `!${route}`, { mascot: "" });
-        await expectError(req, 400, codes.MISSING_CHARACTER);
-    });
-
-    test("block invalid invite", async () => {
-        const req = await api(forgeAdmin(), `!${route}`, { invite: testData.OTHER_INVITE });
-        await expectError(req, 400, codes.INVALID_INVITE);
+    test("blank patch", async () => {
+        await api(forgeAdmin(), route, {});
     });
 
     const data = { ...testData.GUILD_3, owner: randomSnowflake(), advisor: randomSnowflake() };
@@ -183,14 +141,10 @@ describe("DELETE /guilds/:guildId", async () => {
 
     await setupGuild(id);
 
-    test401(route);
     testScope(route);
-    test403(route);
-
-    test("block missing guild", async () => {
-        const req = await api(forgeAdmin(), `!DELETE /v1/guilds/${randomSnowflake()}`);
-        await expectError(req, 404, codes.MISSING_GUILD);
-    });
+    testE(401, route);
+    testE(403, route);
+    testE([404, codes.MISSING_GUILD], `DELETE /v1/guilds/${randomSnowflake()}`);
 
     test("delete guild", async () => {
         expect(await hasGuild(id)).toBeTrue();

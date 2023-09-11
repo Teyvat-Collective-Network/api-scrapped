@@ -20,7 +20,7 @@ export default {
             values.push(value);
         }
 
-        await query(`UPDATE roles SET ${set.join(", ")} WHERE id = ?`, [...values, roleId]);
+        if (set.length > 0) await query(`UPDATE roles SET ${set.join(", ")} WHERE id = ?`, [...values, roleId]);
 
         return await getRole(roleId);
     },

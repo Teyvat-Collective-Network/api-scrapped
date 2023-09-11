@@ -23,10 +23,10 @@ export default async function (token: string | null, route: string, body?: any, 
     if (request) return req;
 
     if (!req.ok) {
-        console.error(`[TEST] API call failed (${req.status})`);
+        console.error(`[TEST] API call failed: ${route} (${req.status})`);
+        console.error(JSON.stringify(body, undefined, 4));
         console.error(JSON.stringify(await req.json(), undefined, 4));
-
-        expect().fail("API call that was expected to be OK failed");
+        process.exit(-1);
     }
 
     const text = await req.text();

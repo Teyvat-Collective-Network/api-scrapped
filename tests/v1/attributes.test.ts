@@ -3,13 +3,9 @@ import codes from "../../lib/codes.ts";
 import { getAttribute, hasAttribute } from "../../lib/db.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { expectError, forgeAdmin, randomId, test401, test403, testScope } from "../utils.ts";
+import { forgeAdmin, randomId, testE, testScope } from "../utils.ts";
+import { setupAttribute } from "./setup.ts";
 import query from "../../lib/query.ts";
-
-async function setupAttribute() {
-    const { type, id, name, emoji } = testData.ATTR_1;
-    await query(`INSERT INTO attributes VALUES (?) ON DUPLICATE KEY UPDATE id = id`, [[type, id, name, emoji]]);
-}
 
 describe("GET /attributes", () => {
     const route = `GET /v1/attributes`;
@@ -17,12 +13,11 @@ describe("GET /attributes", () => {
     test("get attributes", async () => {
         const res = await api(null, route);
 
-        for (const sub of Object.values(res) as any[]) {
+        for (const sub of Object.values(res) as any[])
             for (const attribute of Object.values(sub) as any[]) {
                 expect(attribute.name).toBeString();
                 expect(attribute.emoji).toBeString();
             }
-        }
     });
 });
 
@@ -30,10 +25,7 @@ describe("GET /attributes/:type/:id", () => {
     const data = testData.ATTRS[0];
     const route = `GET /v1/attributes/${data.type}/${data.id}`;
 
-    test("404", async () => {
-        const req = await api(null, `!GET /v1/attributes/zxcvbnm/zxcvbnm`);
-        await expectError(req, 404, codes.MISSING_ATTRIBUTE);
-    });
+    testE([404, codes.MISSING_ATTRIBUTE], `GET /v1/attributes/${randomId()}/${randomId()}`);
 
     test("get attribute", async () => {
         const res = await api(null, route);
@@ -51,14 +43,10 @@ describe("POST /attributes/:type/:id", () => {
 
     const del = () => query(`DELETE FROM attributes WHERE type = ? AND id = ?`, [type, id]);
 
-    test401(route);
     testScope(route);
-    test403(route, data);
-
-    test("block duplicate attribute", async () => {
-        const req = await api(forgeAdmin(), `!POST /v1/attributes/${testData.ATTRS[0].type}/${testData.ATTRS[0].id}`, data);
-        await expectError(req, 409, codes.DUPLICATE);
-    });
+    testE(401, route);
+    testE(403, route, data);
+    testE(409, `POST /v1/attributes/${testData.ATTRS[0].type}/${testData.ATTRS[0].id}`, data);
 
     test("create attribute", async () => {
         await del();
@@ -77,18 +65,14 @@ describe("PATCH /attributes/:type/:id", async () => {
     const data = testData.ATTR_2;
     const route = `PATCH /v1/attributes/${type}/${id}`;
 
-    test401(route);
     testScope(route);
-    test403(route, data);
+    testE(401, route);
+    testE(403, route, data);
+    testE([404, codes.MISSING_ATTRIBUTE], `PATCH /v1/attributes/${randomId()}/${randomId()}`, {});
+    testE(409, `PATCH /v1/attributes/${testData.ATTRS[0].type}/${testData.ATTRS[1].id}`, { id: testData.ATTRS[0].id });
 
-    test("404", async () => {
-        const req = await api(forgeAdmin(), `!PATCH /v1/attributes/${randomId()}/${randomId()}`, {});
-        await expectError(req, 404, codes.MISSING_ATTRIBUTE);
-    });
-
-    test("block duplicate ID", async () => {
-        const req = await api(forgeAdmin(), `!PATCH /v1/attributes/${testData.ATTRS[0].type}/${testData.ATTRS[1].id}`, { id: testData.ATTRS[0].id });
-        await expectError(req, 409, codes.DUPLICATE);
+    test("blank patch", async () => {
+        await api(forgeAdmin(), route, {});
     });
 
     test("update name", async () => {
@@ -118,14 +102,10 @@ describe("DELETE /attributes/:type/:id", async () => {
     const { type, id } = testData.ATTR_1;
     const route = `DELETE /v1/attributes/${type}/${id}`;
 
-    test401(route);
     testScope(route);
-    test403(route);
-
-    test("404", async () => {
-        const req = await api(forgeAdmin(), `!DELETE /v1/attributes/${randomId()}/${randomId()}`);
-        await expectError(req, 404, codes.MISSING_ATTRIBUTE);
-    });
+    testE(401, route);
+    testE(403, route);
+    testE([404, codes.MISSING_ATTRIBUTE], `DELETE /v1/attributes/${randomId()}/${randomId()}`);
 
     test("delete attribute", async () => {
         await setupAttribute();

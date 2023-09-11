@@ -10,6 +10,7 @@ const snowflake = { type: "string", pattern: "^\\d+$", minLength: 17, maxLength:
 const id = { type: "string", pattern: "^[a-z-]+$", minLength: 1, maxLength: 32 };
 
 const data: Record<string, spec> = Object.entries({
+    "test POST /query": {},
     "* GET /auth/key-info": { auth: true },
     "* GET /auth/token": { auth: true },
     "* GET /auth/me": { auth: true },
@@ -135,6 +136,28 @@ const data: Record<string, spec> = Object.entries({
         },
     },
     "* DELETE /attributes/:type/:id": { auth: true, scope: "attributes/delete", schema: { params: { type: "object", properties: { type: id, id } } } },
+    "* GET /characters": {},
+    "* GET /characters/:id": { schema: { params: { type: "object", properties: { id } } } },
+    "* POST /characters/:id": {
+        auth: true,
+        scope: "characters/write",
+        schema: {
+            params: { type: "object", properties: { id } },
+            body: { type: "object", properties: { name: string, short: string, attributes: { type: "object", additionalProperties: id } }, required: ["name"] },
+        },
+    },
+    "* PATCH /characters/:id": {
+        auth: true,
+        scope: "characters/write",
+        schema: {
+            params: { type: "object", properties: { id } },
+            body: {
+                type: "object",
+                properties: { name: string, short: string, attributes: { type: "object", additionalProperties: { oneOf: [id, { type: "null" }] } } },
+            },
+        },
+    },
+    "* DELETE /characters/:id": { auth: true, scope: "characters/delete", schema: { params: { type: "object", properties: { id } } } },
 } satisfies Record<string, base & { schema?: Record<string, any> }>).reduce(
     (o, [k, v]) => ({ ...o, [k]: { ...v, schema: v.schema && Object.entries(v.schema).reduce((o, [k, v]) => ({ ...o, [k]: ajv.compile(v) }), {}) } }),
     {},
