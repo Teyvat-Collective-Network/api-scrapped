@@ -118,7 +118,7 @@ await setup(
     `,
 );
 
-await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE id = id`, [Bun.env.ADMIN]);
+await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE observer = true`, [Bun.env.ADMIN]);
 
 logger.debug("[DB] Initialized root admin");
 
