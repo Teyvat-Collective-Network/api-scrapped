@@ -95,22 +95,21 @@ Bun.serve({
                     if (token) {
                         payload = jwt.verify(token);
 
-                        if (payload?.created && (!payload.expires || payload.expires > Date.now())) {
-                            const [invalidation] = await query(`SELECT invalidated FROM invalidations WHERE id = ?`, [payload.id]);
+                        if (payload)
+                            if (payload.created && (!payload.expires || payload.expires > Date.now())) {
+                                const [invalidation] = await query(`SELECT invalidated FROM invalidations WHERE id = ?`, [payload.id]);
 
-                            if (!invalidation || payload.created > invalidation.invalidated) {
-                                if (payload.forge) {
-                                    if (!Bun.env.DEBUG) {
-                                        throw [403, codes.TEST_KEY, "The provided key is a test key."];
+                                if (!invalidation || payload.created > invalidation.invalidated) {
+                                    if (payload.forge) {
+                                        if (!Bun.env.DEBUG) throw [403, codes.TEST_KEY, "The provided key is a test key."];
+                                        user = payload.data;
+                                    } else {
+                                        const data = await getUser(payload.id);
+                                        user = { ...payload, ...data };
                                     }
-
-                                    user = payload.data;
-                                } else {
-                                    const data = await getUser(payload.id);
-                                    user = { ...payload, ...data };
-                                }
-                            } else why = "The token has been invalidated.";
-                        } else why = "The token is missing the creation field or has expired.";
+                                } else why = "The token has been invalidated.";
+                            } else why = "The token is missing the creation field or has expired.";
+                        else why = "The token is invalid.";
                     } else why = "No authorization was provided.";
 
                     if (route.auth && !user) throw [401, codes.MISSING_AUTH, { message: why, error: payload }];
