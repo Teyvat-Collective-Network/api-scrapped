@@ -10,8 +10,6 @@ import jwt from "./lib/jwt.ts";
 import logger from "./lib/logger.ts";
 import "./lib/setup.ts";
 
-const cors = { headers: { "Access-Control-Allow-Origin": "*" } };
-
 const handlers: Routes = {};
 
 async function load(path: string) {
@@ -143,22 +141,21 @@ Bun.serve({
 
                     if (data instanceof Response) {
                         log(`${data.status}`, await data.json());
-                        data.headers.append("Access-Control-Allow-Origin", "*");
                         return data;
                     }
 
                     if (typeof data === "string") {
                         log("200", { data });
-                        return new Response(data, cors);
+                        return new Response(data);
                     }
 
                     if (data === undefined) {
                         log("200");
-                        return new Response("", cors);
+                        return new Response("");
                     }
 
                     log("200", data);
-                    return new Response(JSON.stringify(data), cors);
+                    return new Response(JSON.stringify(data));
                 } catch (error) {
                     if (error === 403) error = [403, codes.FORBIDDEN, "Insufficient permissions."];
 
@@ -168,17 +165,17 @@ Bun.serve({
 
                         if (typeof status === "number" && typeof code === "number") {
                             log(`${status} / ${code}`, details);
-                            return new Response(JSON.stringify({ code, ...details }), { status, ...cors });
+                            return new Response(JSON.stringify({ code, ...details }), { status });
                         }
                     }
 
                     logger.error(error);
-                    return new Response(JSON.stringify({ code: 1, message: "Unexpected error." }), { status: 500, ...cors });
+                    return new Response(JSON.stringify({ code: 1, message: "Unexpected error." }), { status: 500 });
                 }
             }
 
         log("[INVALID]");
-        return new Response(JSON.stringify({ code: codes.INVALID_VERSION, message: "Invalid API version." }), { status: 404, ...cors });
+        return new Response(JSON.stringify({ code: codes.INVALID_VERSION, message: "Invalid API version." }), { status: 404 });
     },
 });
 
