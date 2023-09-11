@@ -89,10 +89,11 @@ Bun.serve({
                     let user: User | undefined = undefined;
 
                     const token = req.headers.get("authorization");
-                    let why: string;
+                    let why: string = "Unknown authorization error.";
+                    let payload: any = {};
 
                     if (token) {
-                        const payload = jwt.verify(token);
+                        payload = jwt.verify(token);
 
                         if (payload?.created && (!payload.expires || payload.expires > Date.now())) {
                             const [invalidation] = await query(`SELECT invalidated FROM invalidations WHERE id = ?`, [payload.id]);
@@ -112,7 +113,7 @@ Bun.serve({
                         } else why = "The token is missing the creation field or has expired.";
                     } else why = "No authorization was provided.";
 
-                    if (route.auth && !user) throw [401, codes.MISSING_AUTH, why];
+                    if (route.auth && !user) throw [401, codes.MISSING_AUTH, { message: why, error: payload }];
 
                     if (route.scope) {
                         let { scope } = route;
