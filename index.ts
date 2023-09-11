@@ -1,14 +1,13 @@
 import fs from "fs";
 import compile, { versions } from "./compile.ts";
-import query from "./lib/query.ts";
-import { Routes, User, spec } from "./lib/types.ts";
-import routes from "./routes.ts";
-
 import codes from "./lib/codes.ts";
 import { getUser } from "./lib/db.ts";
 import jwt from "./lib/jwt.ts";
 import logger from "./lib/logger.ts";
+import query from "./lib/query.ts";
 import "./lib/setup.ts";
+import { Routes, User, spec } from "./lib/types.ts";
+import routes from "./routes.ts";
 
 const handlers: Routes = {};
 
@@ -25,9 +24,20 @@ async function load(path: string) {
 
 load("./routes");
 
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "*",
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Expose-Headers": "*",
+    "Access-Control-Max-Age": "1728000",
+};
+
 Bun.serve({
     development: !!Bun.env.DEBUG,
     async fetch(req) {
+        if (req.method === "OPTIONS")
+            return new Response("", { status: 204, headers: { "Content-Type": "text/plain; charset=utf-8", "Content-Length": "0", ...corsHeaders } });
+
         const url = new URL(req.url);
 
         const log = (result: string, object?: any) => {
@@ -141,21 +151,22 @@ Bun.serve({
 
                     if (data instanceof Response) {
                         log(`${data.status}`, await data.json());
+                        for (const [key, value] of Object.entries(corsHeaders)) data.headers.append(key, value);
                         return data;
                     }
 
                     if (typeof data === "string") {
                         log("200", { data });
-                        return new Response(data);
+                        return new Response(data, { headers: corsHeaders });
                     }
 
                     if (data === undefined) {
                         log("200");
-                        return new Response("");
+                        return new Response("", { headers: corsHeaders });
                     }
 
                     log("200", data);
-                    return new Response(JSON.stringify(data));
+                    return new Response(JSON.stringify(data), { headers: corsHeaders });
                 } catch (error) {
                     if (error === 403) error = [403, codes.FORBIDDEN, "Insufficient permissions."];
 
@@ -165,17 +176,17 @@ Bun.serve({
 
                         if (typeof status === "number" && typeof code === "number") {
                             log(`${status} / ${code}`, details);
-                            return new Response(JSON.stringify({ code, ...details }), { status });
+                            return new Response(JSON.stringify({ code, ...details }), { status, headers: corsHeaders });
                         }
                     }
 
                     logger.error(error);
-                    return new Response(JSON.stringify({ code: 1, message: "Unexpected error." }), { status: 500 });
+                    return new Response(JSON.stringify({ code: 1, message: "Unexpected error." }), { status: 500, headers: corsHeaders });
                 }
             }
 
         log("[INVALID]");
-        return new Response(JSON.stringify({ code: codes.INVALID_VERSION, message: "Invalid API version." }), { status: 404 });
+        return new Response(JSON.stringify({ code: codes.INVALID_VERSION, message: "Invalid API version." }), { status: 404, headers: corsHeaders });
     },
 });
 
