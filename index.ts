@@ -10,6 +10,8 @@ import jwt from "./lib/jwt.ts";
 import logger from "./lib/logger.ts";
 import "./lib/setup.ts";
 
+const cors = { headers: { "Access-Control-Allow-Origin": "*" } };
+
 const handlers: Routes = {};
 
 async function load(path: string) {
@@ -54,7 +56,7 @@ Bun.serve({
                     const pathlist = path.slice(1).split("/");
 
                     let route: spec | null = null;
-                    let params: any = {};
+                    let params: Record<string, any> = {};
 
                     for (const [key, test] of Object.entries(options)) {
                         const elements = key.slice(1).split("/");
@@ -122,13 +124,11 @@ Bun.serve({
                             }
                     }
 
-                    let body;
+                    let body: any = null;
 
                     try {
                         body = await req.json();
-                    } catch {
-                        body = null;
-                    }
+                    } catch {}
 
                     if (route.schema?.body) {
                         if (!body) throw [400, codes.MISSING_BODY, "No body provided."];
@@ -142,21 +142,22 @@ Bun.serve({
 
                     if (data instanceof Response) {
                         log(`${data.status}`, await data.json());
+                        data.headers.append("Access-Control-Allow-Origin", "*");
                         return data;
                     }
 
                     if (typeof data === "string") {
                         log("200", { data });
-                        return new Response(data);
+                        return new Response(data, cors);
                     }
 
                     if (data === undefined) {
                         log("200");
-                        return new Response();
+                        return new Response("", cors);
                     }
 
                     log("200", data);
-                    return new Response(JSON.stringify(data));
+                    return new Response(JSON.stringify(data), cors);
                 } catch (error) {
                     if (error === 403) error = [403, codes.FORBIDDEN, "Insufficient permissions."];
 
@@ -166,17 +167,17 @@ Bun.serve({
 
                         if (typeof status === "number" && typeof code === "number") {
                             log(`${status} / ${code}`, details);
-                            return new Response(JSON.stringify({ code, ...details }), { status });
+                            return new Response(JSON.stringify({ code, ...details }), { status, ...cors });
                         }
                     }
 
                     logger.error(error);
-                    return new Response(JSON.stringify({ code: 1, message: "Unexpected error." }), { status: 500 });
+                    return new Response(JSON.stringify({ code: 1, message: "Unexpected error." }), { status: 500, ...cors });
                 }
             }
 
         log("[INVALID]");
-        return new Response(JSON.stringify({ code: codes.INVALID_VERSION, message: "Invalid API version." }), { status: 404 });
+        return new Response(JSON.stringify({ code: codes.INVALID_VERSION, message: "Invalid API version." }), { status: 404, ...cors });
     },
 });
 
