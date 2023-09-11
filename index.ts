@@ -89,6 +89,7 @@ Bun.serve({
                     let user: User | undefined = undefined;
 
                     const token = req.headers.get("authorization");
+                    let why: string;
 
                     if (token) {
                         const payload = jwt.verify(token);
@@ -107,11 +108,11 @@ Bun.serve({
                                     const data = await getUser(payload.id);
                                     user = { ...payload, ...data };
                                 }
-                            }
-                        }
-                    }
+                            } else why = "The token has been invalidated.";
+                        } else why = "The token is missing the creation field or has expired.";
+                    } else why = "No authorization was provided.";
 
-                    if (route.auth && !user) throw [401, codes.MISSING_AUTH, "No authorization was provided."];
+                    if (route.auth && !user) throw [401, codes.MISSING_AUTH, why];
 
                     if (route.scope) {
                         let { scope } = route;
