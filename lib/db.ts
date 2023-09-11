@@ -16,6 +16,9 @@ export async function getUser(id: string): Promise<User> {
     if (item?.observer) {
         user.observer = true;
         user.roles.push("observer");
+
+        user.staff = true;
+        user.roles.push("staff");
     }
 
     for (const { guild } of await query(`SELECT guild FROM guild_staff WHERE user = ?`, [id])) {
