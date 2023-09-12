@@ -62,8 +62,8 @@ await setup(
         type VARCHAR(32) NOT NULL,
         value VARCHAR(32) NOT NULL,
         PRIMARY KEY (\`character\`, type),
-        FOREIGN KEY (\`character\`) REFERENCES characters(id) ON DELETE CASCADE,
-        FOREIGN KEY (type, value) REFERENCES attributes(type, id) ON DELETE CASCADE
+        FOREIGN KEY (\`character\`) REFERENCES characters(id) ON UPDATE CASCADE ON DELETE CASCADE,
+        FOREIGN KEY (type, value) REFERENCES attributes(type, id) ON UPDATE CASCADE ON DELETE CASCADE
     `,
 );
 
@@ -77,7 +77,7 @@ await setup(
         owner VARCHAR(20) NOT NULL,
         advisor VARCHAR(20),
         delegated BOOLEAN NOT NULL DEFAULT false,
-        FOREIGN KEY (mascot) REFERENCES characters(id),
+        FOREIGN KEY (mascot) REFERENCES characters(id) ON UPDATE CASCADE,
         FOREIGN KEY (owner) REFERENCES users(id) ON DELETE CASCADE,
         FOREIGN KEY (advisor) REFERENCES users(id) ON DELETE CASCADE
     `,

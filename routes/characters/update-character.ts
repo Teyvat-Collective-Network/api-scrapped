@@ -6,12 +6,14 @@ import { RouteMap } from "../../lib/types.ts";
 export default {
     async "* PATCH /characters/:id"({ params: { id }, body, user }) {
         if (!user.observer) throw 403;
+
         if (!(await hasCharacter(id))) throw [404, codes.MISSING_CHARACTER, `No character exists with ID ${id}.`];
+        if (body.id && body.id !== id && (await hasCharacter(body.id))) throw [409, codes.DUPLICATE, `A character with ID ${id} already exists.`];
 
         const set = [];
         const values = [];
 
-        for (const key of ["name", "short"]) {
+        for (const key of ["id", "name", "short"]) {
             const value = body[key];
             if (value === undefined) continue;
 

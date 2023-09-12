@@ -38,22 +38,22 @@ const data: Record<string, spec> = Object.entries({
     "* PUT /users/:userId/roles/:roleId": {
         auth: true,
         scope: "users/write",
-        schema: { params: { type: "object", properties: { userId: snowflake, roleId: string } } },
+        schema: { params: { type: "object", properties: { userId: snowflake, roleId: id } } },
     },
     "* DELETE /users/:userId/roles/:roleId": {
         auth: true,
         scope: "users/write",
-        schema: { params: { type: "object", properties: { userId: snowflake, roleId: string } } },
+        schema: { params: { type: "object", properties: { userId: snowflake, roleId: id } } },
     },
     "* PUT /users/:userId/roles/:roleId/:guildId": {
         auth: true,
         scope: "users/write",
-        schema: { params: { type: "object", properties: { userId: snowflake, roleId: string, guildId: snowflake } } },
+        schema: { params: { type: "object", properties: { userId: snowflake, roleId: id, guildId: snowflake } } },
     },
     "* DELETE /users/:userId/roles/:roleId/:guildId": {
         auth: true,
         scope: "users/write",
-        schema: { params: { type: "object", properties: { userId: snowflake, roleId: string, guildId: snowflake } } },
+        schema: { params: { type: "object", properties: { userId: snowflake, roleId: id, guildId: snowflake } } },
     },
     "* PUT /staff/:guildId/:userId": {
         auth: true,
@@ -76,7 +76,7 @@ const data: Record<string, spec> = Object.entries({
                 type: "object",
                 properties: {
                     name: { type: "string", minLength: 1, maxLength: 32 },
-                    mascot: string,
+                    mascot: id,
                     invite: string,
                     owner: snowflake,
                     advisor: { oneOf: [snowflake, { type: "null" }] },
@@ -95,7 +95,7 @@ const data: Record<string, spec> = Object.entries({
                 type: "object",
                 properties: {
                     name: { type: "string", minLength: 1, maxLength: 32 },
-                    mascot: string,
+                    mascot: id,
                     invite: string,
                     owner: snowflake,
                     advisor: { oneOf: [snowflake, { type: "null" }] },
@@ -161,7 +161,15 @@ const data: Record<string, spec> = Object.entries({
         scope: "characters/write",
         schema: {
             params: { type: "object", properties: { id } },
-            body: { type: "object", properties: { name: string, short: string, attributes: { type: "object", additionalProperties: id } }, required: ["name"] },
+            body: {
+                type: "object",
+                properties: {
+                    name: { type: "string", minLength: 1, maxLength: 255 },
+                    short: { type: "string", minLength: 1, maxLength: 255 },
+                    attributes: { type: "object", additionalProperties: id },
+                },
+                required: ["name"],
+            },
         },
     },
     "* PATCH /characters/:id": {
@@ -171,7 +179,12 @@ const data: Record<string, spec> = Object.entries({
             params: { type: "object", properties: { id } },
             body: {
                 type: "object",
-                properties: { name: string, short: string, attributes: { type: "object", additionalProperties: { oneOf: [id, { type: "null" }] } } },
+                properties: {
+                    id,
+                    name: { type: "string", minLength: 1, maxLength: 255 },
+                    short: { type: "string", minLength: 1, maxLength: 255 },
+                    attributes: { type: "object", additionalProperties: { oneOf: [id, { type: "null" }] } },
+                },
             },
         },
     },

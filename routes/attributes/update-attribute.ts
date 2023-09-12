@@ -8,7 +8,9 @@ export default {
         if (!user.observer) throw 403;
 
         if (!(await hasAttribute(type, id))) throw [404, codes.MISSING_ATTRIBUTE, `No attribute exists with type ${type} and ID ${id}.`];
-        if (body.id && (await hasAttribute(type, body.id))) throw [409, codes.DUPLICATE, `An attribute with type ${type} and ID ${body.id} already exists.`];
+
+        if (body.id && body.id !== id && (await hasAttribute(type, body.id)))
+            throw [409, codes.DUPLICATE, `An attribute with type ${type} and ID ${body.id} already exists.`];
 
         const set = [];
         const values = [];
