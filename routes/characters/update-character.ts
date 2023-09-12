@@ -24,7 +24,8 @@ export default {
         if (set.length > 0) await query(`UPDATE characters SET ${set.join(", ")} WHERE id = ?`, [...values, id]);
 
         for (const [key, value] of Object.entries(body.attributes ?? {}))
-            await query(`INSERT INTO character_attributes VALUES (?) ON DUPLICATE KEY UPDATE value = ?`, [[id, key, value], value]);
+            if (value === null) await query(`DELETE FROM character_attributes WHERE \`character\` = ? AND type = ?`, [id, key]);
+            else await query(`INSERT INTO character_attributes VALUES (?) ON DUPLICATE KEY UPDATE value = ?`, [[id, key, value], value]);
 
         return await getCharacter(id);
     },
