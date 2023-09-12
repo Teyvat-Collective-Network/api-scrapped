@@ -27,6 +27,7 @@ const data: Record<string, spec> = Object.entries({
         },
     },
     "* GET /stats": {},
+    "* GET /tag/:userId": { auth: true, schema: { params: { type: "object", properties: { userId: snowflake } } } },
     "* GET /users": {},
     "* GET /users/:userId": { schema: { params: { type: "object", properties: { userId: snowflake } } } },
     "* PATCH /users/:userId": {
