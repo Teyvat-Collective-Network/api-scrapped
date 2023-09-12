@@ -182,7 +182,7 @@ const data: Record<string, spec> = Object.entries({
                 properties: {
                     id,
                     name: { type: "string", minLength: 1, maxLength: 255 },
-                    short: { type: "string", minLength: 1, maxLength: 255 },
+                    short: { oneOf: [{ type: "string", minLength: 1, maxLength: 255 }, { type: "null" }] },
                     attributes: { type: "object", additionalProperties: { oneOf: [id, { type: "null" }] } },
                 },
             },
