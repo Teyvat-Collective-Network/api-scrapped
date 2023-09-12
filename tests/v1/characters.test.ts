@@ -50,10 +50,16 @@ describe("POST /characters/:id", () => {
 
     test("create character", async () => {
         await api(forgeAdmin(), route, data);
-
         const output = await getCharacter(id);
-
         expect(output).toMatchObject(data);
+    });
+
+    test("create character without attributes", async () => {
+        const altered = { ...data, attributes: undefined };
+
+        await api(forgeAdmin(), route, altered);
+        const output = await getCharacter(id);
+        expect(output).toMatchObject(altered);
     });
 });
 
