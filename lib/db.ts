@@ -62,7 +62,7 @@ export async function getUser(id: string): Promise<User> {
             }
         }
 
-    if ((user.council = user.observer || user.owner || user.voter)) user.roles.push("council");
+    if ((user.council = user.observer || user.owner || user.advisor || user.voter)) user.roles.push("council");
 
     return user;
 }
