@@ -42,6 +42,8 @@ describe("POST /characters/:id", () => {
     const data = testData.CHAR_1;
     const route = `POST /v1/characters/${id}`;
 
+    const del = () => query(`DELETE FROM characters WHERE id = ?`, [id]);
+
     testScope(route);
     testE(401, route);
     testE(403, route, data);
@@ -49,13 +51,16 @@ describe("POST /characters/:id", () => {
     testE([400, codes.MISSING_ATTRIBUTE], `${route}`, { ...data, attributes: { [randomId()]: randomId() } });
 
     test("create character", async () => {
+        await del();
         await api(forgeAdmin(), route, data);
         const output = await getCharacter(id);
         expect(output).toMatchObject(data);
     });
 
     test("create character without attributes", async () => {
-        const altered = { ...data, attributes: undefined };
+        await del();
+        const altered: any = { ...data };
+        delete altered.attributes;
 
         await api(forgeAdmin(), route, altered);
         const output = await getCharacter(id);

@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import codes from "../../lib/codes.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { expectError, forgeAdmin, forgeOwner, randomSnowflake, testE, testScope } from "../utils.ts";
+import { expectError, forgeAdmin, forgeOwner, randomId, randomSnowflake, testE, testScope } from "../utils.ts";
 
 function testUser(user: any) {
     expect(user).toBeDefined();
@@ -70,8 +70,8 @@ for (const method of ["PUT", "DELETE"])
         testE(403, route);
 
         test("block invalid roles", async () => {
-            for (const role of ["staff", "banshares", ""]) {
-                const req = await api(forgeAdmin(), `!${method} /v1/users/${id}/roles/${role}`);
+            for (const role of ["staff", "banshares", null]) {
+                const req = await api(forgeAdmin(), `!${method} /v1/users/${id}/roles/${role ?? randomId()}`);
                 await expectError(req, 400, role ? codes.INVALID_ROLE_TYPE : codes.MISSING_ROLE);
             }
         });
@@ -98,8 +98,8 @@ for (const method of ["PUT", "DELETE"])
         testE([400, codes.MISSING_GUILD], `${method} /v1/users/${id}/roles/banshares/${id}`);
 
         test("block invalid roles", async () => {
-            for (const role of ["staff", "developer", ""]) {
-                const req = await api(forgeAdmin(), `!${method} /v1/users/${id}/roles/${role}/${guild}`);
+            for (const role of ["staff", "developer", null]) {
+                const req = await api(forgeAdmin(), `!${method} /v1/users/${id}/roles/${role ?? randomId()}/${guild}`);
                 await expectError(req, 400, role ? codes.INVALID_ROLE_TYPE : codes.MISSING_ROLE);
             }
         });

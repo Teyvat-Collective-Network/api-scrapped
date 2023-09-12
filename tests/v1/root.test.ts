@@ -10,7 +10,6 @@ describe("GET /stats", () => {
         expect(res.guildCount).toBeGreaterThanOrEqual(0);
         expect(res.userCount).toBeGreaterThanOrEqual(0);
         expect(res.uptime).toBeGreaterThanOrEqual(0);
-
-        expect(Object.keys(res)).toHaveLength(3);
+        expect(res.startup).toBeGreaterThanOrEqual(0);
     });
 });

@@ -4,7 +4,7 @@ import { getGuild, hasGuild } from "../../lib/db.ts";
 import query from "../../lib/query.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { forgeAdmin, randomSnowflake, testE, testScope } from "../utils.ts";
+import { forgeAdmin, randomId, randomSnowflake, testE, testScope } from "../utils.ts";
 import { setupGuild } from "./setup.ts";
 
 function testGuild(guild: any) {
@@ -64,7 +64,7 @@ describe("POST /guilds/:guildId", async () => {
     testE(403, route, guild);
     testE(409, `POST /v1/guilds/${testData.GUILD.id}`, guild);
     testE([400, codes.DELEGATED_WITHOUT_ADVISOR], `${route}`, { ...guild, advisor: null, delegated: true }, del);
-    testE([400, codes.MISSING_CHARACTER], `${route}`, { ...guild, mascot: "" }, del);
+    testE([400, codes.MISSING_CHARACTER], `${route}`, { ...guild, mascot: randomId() }, del);
     testE([400, codes.INVALID_INVITE], `${route}`, { ...guild, invite: testData.OTHER_INVITE }, del);
 
     test("create guild", async () => {
@@ -98,7 +98,7 @@ describe("PATCH /guilds/:guildId", async () => {
         query(`UPDATE guilds SET advisor = NULL WHERE id = ?`, [id]),
     );
 
-    testE([400, codes.MISSING_CHARACTER], `${route}`, { mascot: "" });
+    testE([400, codes.MISSING_CHARACTER], `${route}`, { mascot: randomId() });
     testE([400, codes.INVALID_INVITE], `${route}`, { invite: testData.OTHER_INVITE });
 
     test("blank patch", async () => {
