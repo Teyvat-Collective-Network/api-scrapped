@@ -1,2 +1,2 @@
-const now = Date.now();
-export default () => Date.now() - now;
+export const startup = Date.now();
+export default () => Date.now() - startup;

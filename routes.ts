@@ -135,7 +135,11 @@ const data: Record<string, spec> = Object.entries({
         scope: "attributes/write",
         schema: {
             params: { type: "object", properties: { type: id, id } },
-            body: { type: "object", properties: { name: string, emoji: string }, required: ["name", "emoji"] },
+            body: {
+                type: "object",
+                properties: { name: { type: "string", minLength: 1, maxLength: 64 }, emoji: { type: "string", maxLength: 64 } },
+                required: ["name", "emoji"],
+            },
         },
     },
     "* PATCH /attributes/:type/:id": {
@@ -143,7 +147,10 @@ const data: Record<string, spec> = Object.entries({
         scope: "attributes/write",
         schema: {
             params: { type: "object", properties: { type: id, id } },
-            body: { type: "object", properties: { id, name: string, emoji: string } },
+            body: {
+                type: "object",
+                properties: { id, name: { type: "string", minLength: 1, maxLength: 64 }, emoji: { type: "string", maxLength: 64 } },
+            },
         },
     },
     "* DELETE /attributes/:type/:id": { auth: true, scope: "attributes/delete", schema: { params: { type: "object", properties: { type: id, id } } } },
