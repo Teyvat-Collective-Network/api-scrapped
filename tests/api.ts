@@ -1,5 +1,3 @@
-import { expect } from "bun:test";
-
 export default async function (token: string | null, route: string, body?: any, init?: RequestInit) {
     let request = route.startsWith("!");
     if (request) route = route.slice(1);

@@ -113,3 +113,20 @@ for (const method of ["PUT", "DELETE"])
             else expect(roles).toBeUndefined();
         });
     });
+
+for (const method of ["PUT", "DELETE"])
+    describe(`${method} /staff/:guildId/:userId`, () => {
+        const id = randomSnowflake();
+        const guild = testData.GUILD.id;
+        const route = `${method} /v1/staff/${guild}/${id}`;
+
+        testScope(route);
+        testE(401, route);
+        testE(403, route);
+        testE([400, codes.MISSING_GUILD], `${method} /v1/staff/${randomSnowflake()}/${id}`);
+
+        test(`${method === "PUT" ? "add" : "remove"} staff`, async () => {
+            const res = await api(forgeOwner(), route);
+            expect(res.guilds[guild]?.staff ?? false).toBe(method === "PUT");
+        });
+    });

@@ -54,6 +54,16 @@ const data: Record<string, spec> = Object.entries({
         scope: "users/write",
         schema: { params: { type: "object", properties: { userId: snowflake, roleId: string, guildId: snowflake } } },
     },
+    "* PUT /staff/:guildId/:userId": {
+        auth: true,
+        scope: "users/write",
+        schema: { params: { type: "object", properties: { guildId: snowflake, userId: snowflake } } },
+    },
+    "* DELETE /staff/:guildId/:userId": {
+        auth: true,
+        scope: "users/write",
+        schema: { params: { type: "object", properties: { guildId: snowflake, userId: snowflake } } },
+    },
     "* GET /guilds": {},
     "* GET /guilds/:guildId": { schema: { params: { type: "object", properties: { guildId: snowflake } } } },
     "* POST /guilds/:guildId": {
