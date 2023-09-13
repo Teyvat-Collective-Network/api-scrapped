@@ -13,6 +13,8 @@ export default {
             if (user.id !== owner) throw 403;
         }
 
+        if (body.start > body.end) throw [400, codes.INVALID_BODY, "Event must not end before it starts."];
+
         await query(`UPDATE events SET start = ?, end = ?, title = ?, body = ? WHERE id = ?`, [body.start, body.end, body.title, body.body, id]);
         await query(`DELETE FROM event_invites WHERE event = ?`, [id]);
 
