@@ -118,6 +118,29 @@ await setup(
     `,
 );
 
+await setup(
+    "events",
+    `
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        owner VARCHAR(20) NOT NULL,
+        start BIGINT NOT NULL,
+        end BIGINT NOT NULL,
+        title VARCHAR(100) NOT NULL,
+        body VARCHAR(4096) NOT NULL,
+        FOREIGN KEY (owner) REFERENCES users(id) ON DELETE CASCADE
+    `,
+);
+
+await setup(
+    "event_invites",
+    `
+        event INT NOT NULL,
+        code VARCHAR(32) NOT NULL,
+        UNIQUE (event, code),
+        FOREIGN KEY (event) REFERENCES events(id) ON DELETE CASCADE
+    `,
+);
+
 await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE observer = true`, [Bun.env.ADMIN]);
 
 logger.debug("[DB] Initialized root admin");

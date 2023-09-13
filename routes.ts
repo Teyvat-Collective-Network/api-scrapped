@@ -190,6 +190,43 @@ const data: Record<string, spec> = Object.entries({
         },
     },
     "* DELETE /characters/:id": { auth: true, scope: "characters/delete", schema: { params: { type: "object", properties: { id } } } },
+    "* GET /events": {},
+    "* POST /events": {
+        auth: true,
+        scope: "calendar/write",
+        schema: {
+            body: {
+                type: "object",
+                properties: {
+                    start: { type: "integer", minimum: 0 },
+                    end: { type: "integer", minimum: 0 },
+                    title: { type: "string", maxLength: 100 },
+                    body: { type: "string", maxLength: 4096 },
+                    invites: { type: "array", items: string },
+                },
+                required: ["start", "end", "title", "body", "invites"],
+            },
+        },
+    },
+    "* GET /events/:id": {},
+    "* PUT /events/:id": {
+        auth: true,
+        scope: "calendar/write",
+        schema: {
+            body: {
+                type: "object",
+                properties: {
+                    start: { type: "integer", minimum: 0 },
+                    end: { type: "integer", minimum: 0 },
+                    title: { type: "string", maxLength: 100 },
+                    body: { type: "string", maxLength: 4096 },
+                    invites: { type: "array", items: string },
+                },
+                required: ["start", "end", "title", "body", "invites"],
+            },
+        },
+    },
+    "* DELETE /events/:id": { auth: true, scope: "calendar/delete" },
 } satisfies Record<string, base & { schema?: Record<string, any> }>).reduce(
     (o, [k, v]) => ({ ...o, [k]: { ...v, schema: v.schema && Object.entries(v.schema).reduce((o, [k, v]) => ({ ...o, [k]: ajv.compile(v) }), {}) } }),
     {},

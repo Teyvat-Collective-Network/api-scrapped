@@ -1,5 +1,5 @@
 import query from "./query.ts";
-import { Attribute, Character, Guild, Role, User } from "./types.ts";
+import { Attribute, CalendarEvent, Character, Guild, Role, User } from "./types.ts";
 import { addToSet } from "./utils.ts";
 
 const defaultGuild = () => ({ owner: false, advisor: false, voter: false, staff: false, roles: [] });
@@ -116,15 +116,20 @@ export async function getCharacter(id: string): Promise<Character> {
     if (!data) return data;
 
     data.attributes = {};
-
-    for (const { type, value } of await query(`SELECT * FROM character_attributes WHERE \`character\` = ?`, [id])) {
-        data.attributes[type] = value;
-    }
-
+    for (const { type, value } of await query(`SELECT * FROM character_attributes WHERE \`character\` = ?`, [id])) data.attributes[type] = value;
     return data;
 }
 
-async function exists(table: string, id: string): Promise<boolean> {
+export async function getEvent(id: number): Promise<CalendarEvent> {
+    const [data] = await query(`SELECT * FROM events WHERE id = ?`, [id]);
+    if (!data) return data;
+
+    data.invites = [];
+    for (const { code } of await query(`SELECT * FROM event_invites WHERE event = ?`, [id])) data.invites.push(code);
+    return data;
+}
+
+async function exists(table: string, id: any): Promise<boolean> {
     const objects = await query(`SELECT 1 FROM ${table} WHERE id = ?`, [id]);
     return objects.length > 0;
 }
@@ -144,4 +149,8 @@ export async function hasAttribute(type: string, id: string): Promise<boolean> {
 
 export async function hasCharacter(id: string): Promise<boolean> {
     return await exists("characters", id);
+}
+
+export async function hasEvent(id: number): Promise<boolean> {
+    return await exists("events", id);
 }
