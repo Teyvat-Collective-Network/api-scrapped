@@ -17,10 +17,6 @@ export default {
 
         await query(`UPDATE events SET start = ?, end = ?, title = ?, body = ? WHERE id = ?`, [body.start, body.end, body.title, body.body, id]);
         await query(`DELETE FROM event_invites WHERE event = ?`, [id]);
-
-        await query(
-            `INSERT INTO event_invites VALUES ?`,
-            body.invites.map((code: string) => [id, code]),
-        );
+        await query(`INSERT INTO event_invites VALUES ?`, [body.invites.map((code: string) => [id, code])]);
     },
 } as RouteMap;
