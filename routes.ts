@@ -200,7 +200,7 @@ const data: Record<string, spec> = Object.entries({
                 properties: {
                     start: { type: "integer", minimum: 0 },
                     end: { type: "integer", minimum: 0 },
-                    title: { type: "string", maxLength: 100 },
+                    title: { type: "string", minLength: 1, maxLength: 100 },
                     body: { type: "string", maxLength: 4096 },
                     invites: { type: "array", items: string },
                 },
@@ -218,7 +218,7 @@ const data: Record<string, spec> = Object.entries({
                 properties: {
                     start: { type: "integer", minimum: 0 },
                     end: { type: "integer", minimum: 0 },
-                    title: { type: "string", maxLength: 100 },
+                    title: { type: "string", minLength: 1, maxLength: 100 },
                     body: { type: "string", maxLength: 4096 },
                     invites: { type: "array", items: string },
                 },
