@@ -3,10 +3,18 @@ import query from "../../lib/query.ts";
 import { CalendarEvent, RouteMap } from "../../lib/types.ts";
 
 export default {
-    async "* GET /events"() {
+    async "* GET /events"({ req }) {
         const output: CalendarEvent[] = [];
 
-        for (const { id } of await query(`SELECT id FROM events`)) output.push(await getEvent(id));
+        const url = new URL(req.url);
+
+        const now = Date.now();
+
+        for (const { id } of await query(
+            url.searchParams.get("all") === "true" ? `SELECT id FROM events` : `SELECT id FROM events WHERE end >= ? AND start <= ?`,
+            [now - 3 * 24 * 60 * 60 * 1000, now + 60 * 24 * 60 * 60 * 1000],
+        ))
+            output.push(await getEvent(id));
 
         return output;
     },
