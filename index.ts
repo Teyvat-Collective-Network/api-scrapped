@@ -181,7 +181,7 @@ Bun.serve({
                     }
 
                     logger.error(error);
-                    return new Response(JSON.stringify({ code: 1, message: "Unexpected error." }), { status: 500, headers: corsHeaders });
+                    return new Response(JSON.stringify({ code: codes.INTERNAL_ERROR, message: "Unexpected error." }), { status: 500, headers: corsHeaders });
                 }
             }
 

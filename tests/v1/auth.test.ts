@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import codes from "../../lib/codes.ts";
 import api from "../api.ts";
 import testData from "../testData.ts";
-import { expectError, forge, forgeAdmin, randomSnowflake, testE } from "../utils.ts";
+import { expectError, forge, forgeAdmin, randomSnowflake, testE, testScope } from "../utils.ts";
 
 describe("GET /auth/key-info", () => {
     const route = `GET /v1/auth/key-info`;
@@ -61,6 +61,7 @@ describe("GET /auth/me", () => {
 describe("POST /auth/invalidate", () => {
     const route = `POST /v1/auth/invalidate`;
 
+    testScope(route);
     testE(401, route);
 
     test("invalidates token", async () => {

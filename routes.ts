@@ -14,7 +14,7 @@ const data: Record<string, spec> = Object.entries({
     "* GET /auth/key-info": { auth: true },
     "* GET /auth/token": { auth: true },
     "* GET /auth/me": { auth: true },
-    "* POST /auth/invalidate": { auth: true },
+    "* POST /auth/invalidate": { auth: true, scope: "invalidate" },
     "* POST /auth/key": {
         auth: true,
         scope: "key",
@@ -227,6 +227,27 @@ const data: Record<string, spec> = Object.entries({
         },
     },
     "* DELETE /events/:id": { auth: true, scope: "calendar/delete" },
+    "* GET /banshares": { auth: true, scope: "banshares/read" },
+    "* POST /banshares": {
+        auth: true,
+        scope: "banshares/create",
+        schema: {
+            body: {
+                type: "object",
+                properties: {
+                    ids: string,
+                    reason: string,
+                    evidence: string,
+                    server: snowflake,
+                    severity: string,
+                    urgent: boolean,
+                    skipValidation: boolean,
+                    skipChecks: boolean,
+                },
+                required: ["ids", "reason", "evidence", "server", "severity", "urgent"],
+            },
+        },
+    },
 } satisfies Record<string, base & { schema?: Record<string, any> }>).reduce(
     (o, [k, v]) => ({ ...o, [k]: { ...v, schema: v.schema && Object.entries(v.schema).reduce((o, [k, v]) => ({ ...o, [k]: ajv.compile(v) }), {}) } }),
     {},

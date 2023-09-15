@@ -141,6 +141,48 @@ await setup(
     `,
 );
 
+/** This intentionally doesn't FKEY into guilds in case a guild is deleted. */
+
+await setup(
+    "banshares",
+    `
+        author VARCHAR(20) NOT NULL,
+        message VARCHAR(20) PRIMARY KEY,
+        status VARCHAR(16) NOT NULL,
+        reason VARCHAR(500) NOT NULL,
+        evidence VARCHAR(1000) NOT NULL,
+        guild VARCHAR(20) NOT NULL,
+        severity VARCHAR(16) NOT NULL,
+        urgent BOOLEAN NOT NULL,
+        FOREIGN KEY (author) REFERENCES users(id) ON DELETE CASCADE
+    `,
+);
+
+await setup(
+    "banshare_ids",
+    `
+        banshare VARCHAR(20) NOT NULL,
+        id VARCHAR(20) NOT NULL,
+        PRIMARY KEY (banshare, id),
+        FOREIGN KEY (banshare) REFERENCES banshares(message) ON DELETE CASCADE
+    `,
+);
+
+await setup(
+    "banshare_crossposts",
+    `
+        banshare VARCHAR(20) NOT NULL,
+        guild VARCHAR(20) NOT NULL,
+        channel VARCHAR(20) NOT NULL,
+        message VARCHAR(20) NOT NULL,
+        executor VARCHAR(20) NOT NULL,
+        PRIMARY KEY (banshare, guild),
+        FOREIGN KEY (banshare) REFERENCES banshares(message) ON DELETE CASCADE,
+        FOREIGN KEY (guild) REFERENCES guilds(id) ON DELETE CASCADE,
+        FOREIGN KEY (executor) REFERENCES users(id) ON DELETE CASCADE
+    `,
+);
+
 await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE observer = true`, [Bun.env.ADMIN]);
 
 logger.debug("[DB] Initialized root admin");
