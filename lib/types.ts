@@ -1,7 +1,12 @@
 import type { ValidateFunction } from "ajv";
 
-export type base = { auth: true; scope?: string } | { auth?: false; scope?: undefined };
-export type spec = base & { schema?: Record<string, ValidateFunction> };
+export type base =
+    | { internal?: false; auth: true; scope?: string }
+    | { internal?: false; auth?: false; scope?: undefined }
+    | { internal: true; auth?: false; scope?: undefined };
+
+export type schemas = "body" | "params" | "query";
+export type spec = base & { schema?: Partial<Record<schemas, ValidateFunction>> };
 
 export type User = {
     id: string;
@@ -35,7 +40,26 @@ export type Attribute = { type: string; id: string; name: string; emoji: string 
 export type Character = { id: string; name: string; short?: string; attributes: Record<string, string> };
 export type CalendarEvent = { id: number; owner: string; start: number; end: number; title: string; body: string; invites: string[] };
 
-export type Handler = (data: { req: Request; params: any; body: any; user: User; token: string }) => any;
+export type Banshare = {
+    author: string;
+    rawids: string;
+    ids: string[];
+    status: string;
+    reason: string;
+    evidence: string;
+    server: string;
+    severity: string;
+    urgent: boolean;
+};
+
+export type Handler = (data: {
+    req: Request;
+    params: Record<string, any>;
+    search: Record<string, any>;
+    body: Record<string, any>;
+    user: User;
+    token: string;
+}) => any;
 
 export type RouteMap = Record<string, Handler>;
 export type Routes = Record<string, Record<string, Record<string, Handler>>>;

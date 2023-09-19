@@ -1,8 +1,9 @@
 import Ajv from "ajv";
 import compile from "./compile.ts";
-import { base, spec } from "./lib/types.ts";
+import { base, schemas, spec } from "./lib/types.ts";
 
 const ajv = new Ajv({ removeAdditional: true, coerceTypes: false });
+const ajvCoerce = new Ajv({ removeAdditional: true, coerceTypes: true });
 
 const boolean = { type: "boolean" };
 const string = { type: "string" };
@@ -227,7 +228,6 @@ const data: Record<string, spec> = Object.entries({
         },
     },
     "* DELETE /events/:id": { auth: true, scope: "calendar/delete" },
-    "* GET /banshares": { auth: true, scope: "banshares/read" },
     "* POST /banshares": {
         auth: true,
         scope: "banshares/create",
@@ -248,8 +248,46 @@ const data: Record<string, spec> = Object.entries({
             },
         },
     },
-} satisfies Record<string, base & { schema?: Record<string, any> }>).reduce(
-    (o, [k, v]) => ({ ...o, [k]: { ...v, schema: v.schema && Object.entries(v.schema).reduce((o, [k, v]) => ({ ...o, [k]: ajv.compile(v) }), {}) } }),
+    "* POST /banshares/:id/:operation": {
+        internal: true,
+        schema: { params: { type: "object", properties: { id: snowflake, operation: { enum: ["publish", "reject", "rescind"] } } } },
+    },
+    "* POST /banshares/:guild/set-output": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* GET /banshares/outputs": { internal: true },
+    "* GET /banshares/:guild/settings": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* PATCH /banshares/:guild/settings": {
+        internal: true,
+        schema: {
+            params: { type: "object", properties: { guild: snowflake } },
+            body: {
+                type: "object",
+                properties: { blockdms: boolean, nobutton: boolean, daedalus: boolean, autoban: { type: "integer", minimum: 0, maximum: 0b11111111 } },
+            },
+        },
+    },
+    "* GET /banshares/:id/ids": { internal: true, schema: { params: { type: "object", properties: { id: snowflake } } } },
+    "* PUT /banshares/:guild/logs": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* GET /banshares/:guild/logs": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* POST /banshares/execute/:id/:guild": { internal: true, schema: { params: { type: "object", properties: { id: snowflake, guild: snowflake } } } },
+    "* PUT /banshares/:id/crossposts": { internal: true, schema: { params: { type: "object", properties: { id: snowflake } } } },
+    "* GET /banshares/:id/rescind-outputs": { internal: true, schema: { params: { type: "object", properties: { id: snowflake } } } },
+} satisfies Record<string, base & { schema?: Partial<Record<schemas, any>> }>).reduce(
+    (o, [k, v]) => ({
+        ...o,
+        [k]: {
+            ...v,
+            schema:
+                v.schema &&
+                Object.entries(v.schema).reduce(
+                    (o, [k, v]) => ({
+                        ...o,
+                        [k]:
+                            k === "query" ? ajvCoerce.compile(v) : k === "params" ? ajv.compile({ ...v, required: Object.keys(v.properties) }) : ajv.compile(v),
+                    }),
+                    {},
+                ),
+        },
+    }),
     {},
 );
 

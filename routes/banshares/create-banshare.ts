@@ -1,4 +1,5 @@
 import codes from "../../lib/codes.ts";
+import { getGuild } from "../../lib/db.ts";
 import di from "../../lib/di.ts";
 import query from "../../lib/query.ts";
 import { RouteMap } from "../../lib/types.ts";
@@ -22,13 +23,17 @@ export default {
 
         let idList: string[] = [];
         if (!body.skipChecks) body.idList = idList = body.ids.trim().split(/\s+/);
+        if (idList.includes(user.id)) throw [400, codes.INVALID_BANSHARE_DATA, "You cannot banshare yourself."];
+        body.author = user.id;
+        body.serverName = (await getGuild(body.server)).name;
 
         const req = await di(`!POST /banshare`, body);
         const { message } = await req.json();
         if (req.status === 400) throw [400, codes.INVALID_BANSHARE_DATA, message];
         if (req.status === 500) throw [500, codes.INTERNAL_ERROR, "An unexpected error occurred."];
 
-        await query(`INSERT INTO banshares VALUES (?)`, [[user.id, message, "pending", body.reason, body.evidence, body.server, body.severity, body.urgent]]);
+        await query(`INSERT INTO banshares VALUES (?)`, [[message, "pending", body.urgent, Date.now(), Date.now()]]);
+
         if (idList.length > 0) await query(`INSERT INTO banshare_ids VALUES ?`, [idList.map((id) => [message, id])]);
 
         return { id: message };

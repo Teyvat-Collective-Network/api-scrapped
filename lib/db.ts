@@ -1,5 +1,5 @@
 import query from "./query.ts";
-import { Attribute, CalendarEvent, Character, Guild, Role, User } from "./types.ts";
+import { Attribute, Banshare, CalendarEvent, Character, Guild, Role, User } from "./types.ts";
 import { addToSet } from "./utils.ts";
 
 const defaultGuild = () => ({ owner: false, advisor: false, voter: false, staff: false, roles: [] });
@@ -129,8 +129,19 @@ export async function getEvent(id: number): Promise<CalendarEvent> {
     return data;
 }
 
-async function exists(table: string, id: any): Promise<boolean> {
-    const objects = await query(`SELECT 1 FROM ${table} WHERE id = ?`, [id]);
+export async function getBanshare(message: string): Promise<Banshare> {
+    const [data] = await query(`SELECT * FROM banshares WHERE message = ?`, [message]);
+    if (!data) return data;
+
+    data.ids = [];
+    for (const { id } of await query(`SELECT id FROM banshare_ids WHERE banshare = ?`, [message])) data.ids.push(id);
+
+    data.urgent = !!data.urgent;
+    return data;
+}
+
+async function exists(table: string, id: any, column = "id"): Promise<boolean> {
+    const objects = await query(`SELECT 1 FROM ${table} WHERE ${column} = ?`, [id]);
     return objects.length > 0;
 }
 
@@ -153,4 +164,8 @@ export async function hasCharacter(id: string): Promise<boolean> {
 
 export async function hasEvent(id: number): Promise<boolean> {
     return await exists("events", id);
+}
+
+export async function hasBanshare(message: string): Promise<boolean> {
+    return await exists("banshares", message, "message");
 }
