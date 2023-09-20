@@ -1,4 +1,5 @@
 import codes from "./codes.ts";
+import logger from "./logger.ts";
 
 export default async function (route: string, body?: any) {
     let request = false;
@@ -20,6 +21,10 @@ export default async function (route: string, body?: any) {
 
     if (request) return req;
 
-    if (!req.ok) throw req.status;
+    if (!req.ok) {
+        logger.error(await req.json(), route);
+        throw req.status;
+    }
+
     return await req.json();
 }
