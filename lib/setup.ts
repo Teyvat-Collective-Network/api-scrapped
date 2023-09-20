@@ -356,6 +356,19 @@ await setup(
     `,
 );
 
+await setup(
+    "autosync",
+    `
+        guild VARCHAR(20) NOT NULL,
+        channel VARCHAR(20),
+        message VARCHAR(20),
+        repost BOOLEAN NOT NULL,
+        webhook VARCHAR(256),
+        PRIMARY KEY (guild),
+        FOREIGN KEY (guild) REFERENCES guilds(id) ON DELETE CASCADE
+    `
+)
+
 await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE observer = true`, [Bun.env.ADMIN]);
 
 logger.debug("[DB] Initialized root admin");

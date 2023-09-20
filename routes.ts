@@ -30,6 +30,7 @@ const data: Record<string, spec> = Object.entries({
         },
     },
     "* GET /stats": {},
+    "* GET /partner-list": {},
     "* GET /tag/:userId": { schema: { params: { type: "object", properties: { userId: snowflake } } } },
     "* GET /invite/:invite": { schema: { params: { type: "object", properties: { invite: string } } } },
     "* GET /users": {},
@@ -347,6 +348,11 @@ const data: Record<string, spec> = Object.entries({
         schema: { params: { type: "object", properties: { guild: snowflake, source: snowflake, target: snowflake } } },
     },
     "* GET /autoroles/:guild": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* GET /autosync": { internal: true },
+    "* GET /autosync/:guild": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* PUT /autosync/:guild": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* DELETE /autosync/:guild": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* PUT /autosync/:guild/:message": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake, message: snowflake } } } },
 } satisfies Record<string, base & { schema?: Partial<Record<schemaKeys, any>> }>).reduce(
     (o, [k, v]) => ({
         ...o,
