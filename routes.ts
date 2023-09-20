@@ -324,8 +324,9 @@ const data: Record<string, spec> = Object.entries({
         internal: true,
         schema: { params: { type: "object", properties: { guild: snowflake, watch: snowflake, role: id } } },
     },
-    "* GET /autostaff/:guild": { internal: true },
-    "* PUT /set-staff/:guild": { internal: true },
+    "* GET /autostaff/:guild": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* PUT /set-staff/:guild": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
+    "* PUT /set-staff/:guild/:user": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake, user: snowflake } } } },
 } satisfies Record<string, base & { schema?: Partial<Record<schemaKeys, any>> }>).reduce(
     (o, [k, v]) => ({
         ...o,

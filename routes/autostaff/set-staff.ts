@@ -14,7 +14,8 @@ export default {
         const roles = Object.entries(users).flatMap(([user, roles]) => roles.map((role) => [user, guild, role]));
         const staff = Object.keys(users).map((user) => [user, guild]);
 
-        await query(`INSERT INTO users VALUES ? ON DUPLICATE KEY UPDATE id = id`, [Object.keys(users).map((id) => [id, false])]);
+        if (Object.keys(users).length > 0)
+            await query(`INSERT INTO users VALUES ? ON DUPLICATE KEY UPDATE id = id`, [Object.keys(users).map((id) => [id, false])]);
 
         if (roles.length > 0) await query(`INSERT INTO guild_roles VALUES ?`, [roles]);
         if (staff.length > 0) await query(`INSERT INTO guild_staff VALUES ?`, [staff]);
