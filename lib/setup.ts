@@ -217,6 +217,100 @@ await setup(
     `,
 );
 
+await setup(
+    "polls",
+    `
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        message VARCHAR(20) NOT NULL,
+        duration FLOAT NOT NULL,
+        close BIGINT NOT NULL,
+        closed BOOLEAN NOT NULL,
+        dm BOOLEAN NOT NULL,
+        live BOOLEAN NOT NULL,
+        restricted BOOLEAN NOT NULL,
+        quorum SMALLINT NOT NULL,
+        mode VARCHAR(16) NOT NULL,
+        preinduct BOOLEAN NOT NULL,
+        server VARCHAR(32) NOT NULL,
+        question VARCHAR(256) NOT NULL,
+        wave SMALLINT NOT NULL,
+        seats SMALLINT NOT NULL,
+        min SMALLINT NOT NULL,
+        max SMALLINT NOT NULL
+    `,
+);
+
+await setup(
+    "poll_candidates",
+    `
+        poll INT NOT NULL,
+        user VARCHAR(20) NOT NULL,
+        PRIMARY KEY (poll, user),
+        FOREIGN KEY (poll) REFERENCES polls(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        FOREIGN KEY (user) REFERENCES users(id) ON DELETE CASCADE
+    `,
+);
+
+await setup(
+    "poll_options",
+    `
+        poll INT NOT NULL,
+        \`option\` VARCHAR(100) NOT NULL,
+        PRIMARY KEY (poll, \`option\`),
+        FOREIGN KEY (poll) REFERENCES polls(id) ON DELETE CASCADE ON UPDATE CASCADE
+    `,
+);
+
+await setup(
+    "poll_voters",
+    `
+        poll INT NOT NULL,
+        user VARCHAR(20) NOT NULL,
+        PRIMARY KEY (poll, user),
+        FOREIGN KEY (poll) REFERENCES polls(id) ON DELETE CASCADE,
+        FOREIGN KEY (user) REFERENCES users(id) ON DELETE CASCADE
+    `,
+);
+
+await setup(
+    "poll_votes",
+    `
+        poll INT NOT NULL,
+        user VARCHAR(20) NOT NULL,
+        abstain BOOLEAN NOT NULL,
+        yes BOOLEAN NOT NULL,
+        verdict SMALLINT NOT NULL,
+        PRIMARY KEY (poll, user),
+        FOREIGN KEY (poll) REFERENCES polls(id) ON DELETE CASCADE,
+        FOREIGN KEY (user) REFERENCES users(id) ON DELETE CASCADE
+    `,
+);
+
+await setup(
+    "poll_votes_elections",
+    `
+        poll INT NOT NULL,
+        user VARCHAR(20) NOT NULL,
+        target VARCHAR(20) NOT NULL,
+        vote SMALLINT NOT NULL,
+        PRIMARY KEY (poll, user, target),
+        FOREIGN KEY (poll, user) REFERENCES poll_votes(poll, user) ON DELETE CASCADE,
+        FOREIGN KEY (poll, target) REFERENCES poll_candidates(poll, user) ON DELETE CASCADE
+    `,
+);
+
+await setup(
+    "poll_votes_selections",
+    `
+        poll INT NOT NULL,
+        user VARCHAR(20) NOT NULL,
+        \`option\` VARCHAR(20) NOT NULL,
+        PRIMARY KEY (poll, user, \`option\`),
+        FOREIGN KEY (poll, user) REFERENCES poll_votes(poll, user) ON DELETE CASCADE,
+        FOREIGN KEY (poll, \`option\`) REFERENCES poll_options(poll, \`option\`) ON DELETE CASCADE
+    `,
+);
+
 await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE observer = true`, [Bun.env.ADMIN]);
 
 logger.debug("[DB] Initialized root admin");

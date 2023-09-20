@@ -5,8 +5,8 @@ export type base =
     | { internal?: false; auth?: false; scope?: undefined }
     | { internal: true; auth?: false; scope?: undefined };
 
-export type schemas = "body" | "params" | "query";
-export type spec = base & { schema?: Partial<Record<schemas, ValidateFunction>> };
+export type schemaKeys = "body" | "params" | "query";
+export type spec = base & { schema?: Partial<Record<schemaKeys, ValidateFunction>> };
 
 export type User = {
     id: string;
@@ -50,6 +50,38 @@ export type Banshare = {
     server: string;
     severity: string;
     urgent: boolean;
+};
+
+export type Poll = {
+    id: number;
+    message: string;
+    duration: number;
+    close: number;
+    closed: boolean;
+    dm: boolean;
+    live: boolean;
+    restricted: boolean;
+    quorum: number;
+    voters: string[];
+} & (
+    | { mode: "induction"; preinduct: boolean; server: string }
+    | { mode: "proposal"; question: string }
+    | { mode: "election"; wave: number; seats: number; candidates: string[] }
+    | { mode: "selection"; question: string; min: number; max: number; options: string[] }
+);
+
+export type PollVote = {
+    poll: number;
+    user: string;
+    mode: "induction" | "proposal" | "election" | "selection";
+    missing: boolean;
+    abstain: boolean;
+    yes: boolean;
+    verdict: string;
+    ranked: string[];
+    countered: string[];
+    abstained: string[];
+    selected: string[];
 };
 
 export type Handler = (data: {

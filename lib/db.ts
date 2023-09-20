@@ -1,5 +1,5 @@
 import query from "./query.ts";
-import { Attribute, Banshare, CalendarEvent, Character, Guild, Role, User } from "./types.ts";
+import { Attribute, Banshare, CalendarEvent, Character, Guild, Poll, PollVote, Role, User } from "./types.ts";
 import { addToSet } from "./utils.ts";
 
 const defaultGuild = () => ({ owner: false, advisor: false, voter: false, staff: false, roles: [] });
@@ -140,6 +140,57 @@ export async function getBanshare(message: string): Promise<Banshare> {
     return data;
 }
 
+export async function getPoll(id: number): Promise<Poll> {
+    const [data] = await query(`SELECT * FROM polls WHERE id = ?`, [id]);
+    if (!data) return data;
+
+    if (data.mode === "election")
+        data.candidates = (await query(`SELECT user FROM poll_candidates WHERE poll = ?`, [id])).map(({ user }: { user: string }) => user);
+    else if (data.mode === "selection")
+        data.options = (await query(`SELECT \`option\` FROM poll_options WHERE poll = ?`, [id])).map(({ option }: { option: string }) => option);
+
+    return data;
+}
+
+export async function getVote(poll: Poll, user: string): Promise<PollVote> {
+    const { id } = poll;
+    const [data] = await query(`SELECT * FROM poll_votes WHERE poll = ? AND user = ?`, [id, user]);
+
+    const vote: PollVote = {
+        poll: id,
+        user,
+        mode: poll.mode,
+        missing: false,
+        abstain: true,
+        yes: false,
+        verdict: "reject",
+        ranked: [],
+        countered: [],
+        abstained: [],
+        selected: [],
+    };
+
+    if (!data) return { ...vote, missing: true };
+    if (data.abstain) return { ...vote };
+
+    vote.abstain = false;
+    vote.yes = data.yes;
+    vote.verdict =
+        data.verdict === 0 ? "reject" : data.verdict === 1 ? "extend" : data.verdict === 2 ? "induct-now" : data.verdict === 3 ? "induct-later" : "reject";
+
+    for (const { target } of await query(`SELECT target FROM poll_votes_elections WHERE poll = ? AND user = ? AND vote > 0 ORDER BY vote ASC`, [id, user]))
+        vote.ranked.push(target);
+
+    for (const { target } of await query(`SELECT target FROM poll_votes_elections WHERE poll = ? AND user = ? AND vote = -1`, [id, user]))
+        vote.countered.push(target);
+
+    vote.abstained = poll.mode === "election" ? poll.candidates.filter((x) => !vote.ranked.includes(x) && !vote.countered.includes(x)) : [];
+
+    for (const { option } of await query(`SELECT \`option\` FROM poll_votes_selections WHERE poll = ? AND user = ?`, [id, user])) vote.selected.push(option);
+
+    return vote;
+}
+
 async function exists(table: string, id: any, column = "id"): Promise<boolean> {
     const objects = await query(`SELECT 1 FROM ${table} WHERE ${column} = ?`, [id]);
     return objects.length > 0;
@@ -168,4 +219,8 @@ export async function hasEvent(id: number): Promise<boolean> {
 
 export async function hasBanshare(message: string): Promise<boolean> {
     return await exists("banshares", message, "message");
+}
+
+export async function hasPoll(id: number): Promise<boolean> {
+    return await exists("polls", id);
 }

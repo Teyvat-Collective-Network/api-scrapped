@@ -1,6 +1,7 @@
 import Ajv from "ajv";
 import compile from "./compile.ts";
-import { base, schemas, spec } from "./lib/types.ts";
+import schemas from "./lib/schemas.ts";
+import { base, schemaKeys, spec } from "./lib/types.ts";
 
 const ajv = new Ajv({ removeAdditional: true, coerceTypes: false });
 const ajvCoerce = new Ajv({ removeAdditional: true, coerceTypes: true });
@@ -9,6 +10,7 @@ const boolean = { type: "boolean" };
 const string = { type: "string" };
 const snowflake = { type: "string", pattern: "^\\d+$", minLength: 17, maxLength: 20 };
 const id = { type: "string", pattern: "^[a-z-]+$", minLength: 1, maxLength: 32 };
+const int = { type: "string", pattern: "^\\d+$" };
 
 const data: Record<string, spec> = Object.entries({
     "test POST /query": {},
@@ -271,7 +273,48 @@ const data: Record<string, spec> = Object.entries({
     "* POST /banshares/execute/:id/:guild": { internal: true, schema: { params: { type: "object", properties: { id: snowflake, guild: snowflake } } } },
     "* PUT /banshares/:id/crossposts": { internal: true, schema: { params: { type: "object", properties: { id: snowflake } } } },
     "* GET /banshares/:id/rescind-outputs": { internal: true, schema: { params: { type: "object", properties: { id: snowflake } } } },
-} satisfies Record<string, base & { schema?: Partial<Record<schemas, any>> }>).reduce(
+    "* GET /banshares/pending": { internal: true },
+    "* POST /banshares/remind": { internal: true },
+    "* DELETE /banshares/:id": { internal: true, schema: { params: { type: "object", properties: { id: snowflake } } } },
+    "* GET /polls": { auth: true, scope: "polls/read" },
+    "* POST /polls": { auth: true, scope: "polls/write", schema: { body: schemas.poll } },
+    "* GET /polls/:id": { auth: true, scope: "polls/read", schema: { params: { type: "object", properties: { id: int } } } },
+    "* GET /polls/:id/di": { internal: true },
+    "* PUT /polls/:id": { auth: true, scope: "polls/write", schema: { params: { type: "object", properties: { id: int } }, body: schemas.poll } },
+    "* DELETE /polls/:id": { auth: true, scope: "polls/delete", schema: { params: { type: "object", properties: { id: int } } } },
+    "* DELETE /polls/:id/di": { internal: true, schema: { params: { type: "object", properties: { id: int } } } },
+    "* GET /polls/:id/votes": { internal: true, schema: { params: { type: "object", properties: { id: int } } } },
+    "* GET /polls/:id/vote": { auth: true, scope: "polls/vote", schema: { params: { type: "object", properties: { id: int } } } },
+    "* GET /polls/:id/vote/di/:user": { internal: true, schema: { params: { type: "object", properties: { id: int, user: snowflake } } } },
+    "* PUT /polls/:id/vote": {
+        auth: true,
+        scope: "polls/vote",
+        schema: {
+            params: { type: "object", properties: { id: int } },
+            body: {
+                oneOf: [
+                    { type: "object", properties: { abstain: { enum: [true] } }, required: ["abstain"] },
+                    {
+                        oneOf: [
+                            { type: "object", properties: { verdict: { enum: ["reject", "extend", "induct-now", "induct-later"] } }, required: ["verdict"] },
+                            { type: "object", properties: { yes: boolean }, required: ["yes"] },
+                            {
+                                type: "object",
+                                properties: { candidates: { type: "object", patternProperties: { "^\\d{17,20}$": { type: "integer", minimum: -1 } } } },
+                                required: ["candidates"],
+                            },
+                            { type: "object", properties: { selected: { type: "array", items: { type: "string" } } }, required: ["selected"] },
+                        ],
+                    },
+                ],
+            },
+        },
+    },
+    "* PUT /polls/:id/vote/di": { internal: true, schema: { params: { type: "object", properties: { id: int } } } },
+    "* POST /polls/dm": { internal: true },
+    "* POST /polls/close": { internal: true },
+    "* GET /polls/activity-check": { auth: true, scope: "polls/activity-check" },
+} satisfies Record<string, base & { schema?: Partial<Record<schemaKeys, any>> }>).reduce(
     (o, [k, v]) => ({
         ...o,
         [k]: {
