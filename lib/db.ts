@@ -2,7 +2,7 @@ import query from "./query.ts";
 import { Attribute, Banshare, CalendarEvent, Character, Guild, Poll, PollVote, Role, User } from "./types.ts";
 import { addToSet } from "./utils.ts";
 
-const defaultGuild = () => ({ owner: false, advisor: false, voter: false, staff: false, roles: [] });
+const defaultGuild = () => ({ owner: false, advisor: false, voter: false, staff: false, council: false, roles: [] });
 
 export async function ensureUser(id: string) {
     await query(`INSERT INTO users VALUES (?, false) ON DUPLICATE KEY UPDATE id = id`, [id]);
@@ -62,6 +62,7 @@ export async function getUser(id: string): Promise<User> {
             }
         }
 
+    for (const guild of Object.values(user.guilds)) if ((guild.council = guild.owner || guild.advisor)) guild.roles.push("council");
     if ((user.council = user.observer || user.owner || user.advisor || user.voter)) user.roles.push("council");
 
     return user;

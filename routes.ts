@@ -327,6 +327,26 @@ const data: Record<string, spec> = Object.entries({
     "* GET /autostaff/:guild": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
     "* PUT /set-staff/:guild": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
     "* PUT /set-staff/:guild/:user": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake, user: snowflake } } } },
+    "* PUT /autoroles/:guild/:role/:target": {
+        internal: true,
+        schema: { params: { type: "object", properties: { guild: snowflake, role: id, target: snowflake } } },
+    },
+    "* DELETE /autoroles/:guild/:role/:target": {
+        internal: true,
+        schema: { params: { type: "object", properties: { guild: snowflake, role: id, target: snowflake } } },
+    },
+    "* PUT /guild-autoroles/:guild/:source/:target": {
+        internal: true,
+        schema: {
+            params: { type: "object", properties: { guild: snowflake, source: snowflake, target: snowflake } },
+            body: { type: "object", properties: { role: id } },
+        },
+    },
+    "* DELETE /guild-autoroles/:guild/:source/:target": {
+        internal: true,
+        schema: { params: { type: "object", properties: { guild: snowflake, source: snowflake, target: snowflake } } },
+    },
+    "* GET /autoroles/:guild": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake } } } },
 } satisfies Record<string, base & { schema?: Partial<Record<schemaKeys, any>> }>).reduce(
     (o, [k, v]) => ({
         ...o,

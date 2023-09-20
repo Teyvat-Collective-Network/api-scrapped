@@ -332,6 +332,30 @@ await setup(
     `,
 );
 
+await setup(
+    "autoroles",
+    `
+        guild VARCHAR(20) NOT NULL,
+        role VARCHAR(32) NOT NULL,
+        target VARCHAR(20) NOT NULL,
+        PRIMARY KEY (guild, role, target),
+        FOREIGN KEY (role) REFERENCES roles(id) ON DELETE CASCADE
+    `,
+);
+
+await setup(
+    "guild_autoroles",
+    `
+        guild VARCHAR(20) NOT NULL,
+        source VARCHAR(20) NOT NULL,
+        target VARCHAR(20) NOT NULL,
+        role VARCHAR(20),
+        PRIMARY KEY (guild, source, target),
+        FOREIGN KEY (source) REFERENCES guilds(id) ON DELETE CASCADE,
+        FOREIGN KEY (role) REFERENCES roles(id) ON DELETE CASCADE
+    `,
+);
+
 await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE observer = true`, [Bun.env.ADMIN]);
 
 logger.debug("[DB] Initialized root admin");

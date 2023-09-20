@@ -10,5 +10,7 @@ export default {
         if (!(await hasGuild(guildId))) throw [404, codes.MISSING_GUILD, `No guild exists with ID ${guildId}.`];
 
         await query(`DELETE FROM guilds WHERE id = ?`, [guildId]);
+        await query(`DELETE FROM autoroles WHERE guild = ?`, [guildId]);
+        await query(`DELETE FROM guild_autoroles WHERE guild = ?`, [guildId]);
     },
 } as RouteMap;
