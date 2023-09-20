@@ -1,5 +1,6 @@
 import codes from "../../lib/codes.ts";
 import { hasGuild } from "../../lib/db.ts";
+import di from "../../lib/di.ts";
 import query from "../../lib/query.ts";
 import { RouteMap } from "../../lib/types.ts";
 
@@ -12,5 +13,7 @@ export default {
         await query(`DELETE FROM guilds WHERE id = ?`, [guildId]);
         await query(`DELETE FROM autoroles WHERE guild = ?`, [guildId]);
         await query(`DELETE FROM guild_autoroles WHERE guild = ?`, [guildId]);
+
+        di(`PUT /autoroles`).catch(() => {});
     },
 } as RouteMap;

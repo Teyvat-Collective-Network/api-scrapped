@@ -1,5 +1,6 @@
 import codes from "../../lib/codes.ts";
 import { getUser, hasGuild } from "../../lib/db.ts";
+import di from "../../lib/di.ts";
 import query from "../../lib/query.ts";
 import { RouteMap } from "../../lib/types.ts";
 
@@ -10,6 +11,8 @@ export default {
         if (!(await hasGuild(guildId))) throw [400, codes.MISSING_GUILD, `No guild exists with ID ${guildId}.`];
 
         await query(`DELETE FROM guild_staff WHERE user = ? AND guild = ?`, [userId, guildId]);
+
+        di(`PUT /autoroles/${userId}`).catch(() => {});
 
         return await getUser(userId);
     },

@@ -1,4 +1,5 @@
 import { ensureUser, hasGuild } from "../../lib/db.ts";
+import di from "../../lib/di.ts";
 import query from "../../lib/query.ts";
 import { RouteMap } from "../../lib/types.ts";
 
@@ -16,5 +17,7 @@ export default {
             const roles: string[] = body.roles;
             if (roles.length > 0) await query(`INSERT INTO guild_roles VALUES ?`, [roles.map((role) => [user, guild, role])]);
         } else await query(`DELETE FROM guild_staff WHERE guild = ? AND user = ?`, [guild, user]);
+
+        di(`PUT /autoroles/${user}`).catch(() => {});
     },
 } as RouteMap;

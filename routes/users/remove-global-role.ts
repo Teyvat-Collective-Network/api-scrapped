@@ -1,5 +1,6 @@
 import codes from "../../lib/codes.ts";
 import { ensureUser, getRole, getUser } from "../../lib/db.ts";
+import di from "../../lib/di.ts";
 import query from "../../lib/query.ts";
 import { RouteMap } from "../../lib/types.ts";
 
@@ -13,6 +14,8 @@ export default {
 
         await ensureUser(userId);
         await query(`DELETE FROM global_roles WHERE user = ? AND role = ?`, [userId, roleId]);
+
+        di(`PUT /autoroles/${userId}`).catch(() => {});
 
         return await getUser(userId);
     },

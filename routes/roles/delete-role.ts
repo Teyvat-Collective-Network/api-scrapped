@@ -1,5 +1,6 @@
 import codes from "../../lib/codes.ts";
 import { getRole, hasRole } from "../../lib/db.ts";
+import di from "../../lib/di.ts";
 import query from "../../lib/query.ts";
 import { RouteMap } from "../../lib/types.ts";
 
@@ -11,5 +12,7 @@ export default {
         if ((await getRole(roleId)).assignment === "pseudo") throw [400, codes.INVALID_ROLE_TYPE, "Pseudo roles cannot be deleted."];
 
         await query(`DELETE FROM roles WHERE id = ?`, roleId);
+
+        di(`PUT /autoroles`).catch(() => {});
     },
 } as RouteMap;

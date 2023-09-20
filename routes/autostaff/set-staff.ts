@@ -1,4 +1,5 @@
 import { hasGuild } from "../../lib/db.ts";
+import di from "../../lib/di.ts";
 import query from "../../lib/query.ts";
 import { RouteMap } from "../../lib/types.ts";
 
@@ -19,5 +20,7 @@ export default {
 
         if (roles.length > 0) await query(`INSERT INTO guild_roles VALUES ?`, [roles]);
         if (staff.length > 0) await query(`INSERT INTO guild_staff VALUES ?`, [staff]);
+
+        di(`PUT /autoroles`).catch(() => {});
     },
 } as RouteMap;

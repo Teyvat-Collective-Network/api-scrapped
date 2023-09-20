@@ -1,5 +1,6 @@
 import codes from "../../lib/codes.ts";
 import { ensureUser, getUser, hasGuild } from "../../lib/db.ts";
+import di from "../../lib/di.ts";
 import query from "../../lib/query.ts";
 import { RouteMap } from "../../lib/types.ts";
 
@@ -11,6 +12,8 @@ export default {
 
         await ensureUser(userId);
         await query(`INSERT INTO guild_staff VALUES (?) ON DUPLICATE KEY UPDATE user = user`, [[userId, guildId]]);
+
+        di(`PUT /autoroles/${userId}`).catch(() => {});
 
         return await getUser(userId);
     },

@@ -52,6 +52,8 @@ export default {
 
         if (set.length > 0) await query(`UPDATE guilds SET ${set.join(", ")} WHERE id = ?`, [...values, guildId]);
 
+        di(`PUT /autoroles`).catch(() => {});
+
         return await getGuild(guildId);
     },
 } as RouteMap;
