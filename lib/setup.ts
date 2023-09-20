@@ -311,6 +311,27 @@ await setup(
     `,
 );
 
+await setup(
+    "autostaff",
+    `
+        guild VARCHAR(20) NOT NULL,
+        watch VARCHAR(20) NOT NULL,
+        PRIMARY KEY (watch),
+        FOREIGN KEY (guild) REFERENCES guilds(id) ON DELETE CASCADE
+    `,
+);
+
+await setup(
+    "autostaff_roles",
+    `
+        watch VARCHAR(20) NOT NULL,
+        role VARCHAR(32) NOT NULL,
+        PRIMARY KEY (watch, role),
+        FOREIGN KEY (watch) REFERENCES autostaff(watch) ON DELETE CASCADE,
+        FOREIGN KEY (role) REFERENCES roles(id) ON DELETE CASCADE
+    `,
+);
+
 await query(`INSERT INTO users VALUES (?, true) ON DUPLICATE KEY UPDATE observer = true`, [Bun.env.ADMIN]);
 
 logger.debug("[DB] Initialized root admin");

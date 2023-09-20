@@ -314,6 +314,18 @@ const data: Record<string, spec> = Object.entries({
     "* POST /polls/dm": { internal: true },
     "* POST /polls/close": { internal: true },
     "* GET /polls/activity-check": { auth: true, scope: "polls/activity-check" },
+    "* PUT /autostaff/:guild/:watch": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake, watch: snowflake } } } },
+    "* PUT /autostaff/:guild/:watch/:role": {
+        internal: true,
+        schema: { params: { type: "object", properties: { guild: snowflake, watch: snowflake, role: id } } },
+    },
+    "* DELETE /autostaff/:guild/:watch": { internal: true, schema: { params: { type: "object", properties: { guild: snowflake, watch: snowflake } } } },
+    "* DELETE /autostaff/:guild/:watch/:role": {
+        internal: true,
+        schema: { params: { type: "object", properties: { guild: snowflake, watch: snowflake, role: id } } },
+    },
+    "* GET /autostaff/:guild": { internal: true },
+    "* PUT /set-staff/:guild": { internal: true },
 } satisfies Record<string, base & { schema?: Partial<Record<schemaKeys, any>> }>).reduce(
     (o, [k, v]) => ({
         ...o,
